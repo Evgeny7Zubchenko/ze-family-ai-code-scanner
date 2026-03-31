@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Z.E Family | AI Code Security Scanner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 16px;
+      background: linear-gradient(180deg, #eaf7ff 0%, #dff2ff 100%);
+      color: #18324a;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+      font-weight: bold;
+      color: #2b5d87;
+      letter-spacing: 0.5px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(65, 125, 176, 0.12);
+      border: 1px solid rgba(120, 180, 220, 0.35);
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      color: #224b6e;
+    }
+
+    p {
+      color: #375d7d;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+      border: 1px solid #b8d9ee;
+      border-radius: 10px;
+      background: #f8fdff;
+      color: #18324a;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    button {
+      padding: 12px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      background: #4a90c2;
+      color: white;
+      box-shadow: 0 4px 12px rgba(74, 144, 194, 0.2);
+    }
+
+    button.secondary {
+      background: #6faed8;
+    }
+
+    button.danger {
+      background: #c95f7a;
+    }
+
+    #status {
+      margin-top: 18px;
+      font-weight: bold;
+    }
+
+    #summary {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #2f5676;
+    }
+
+    #result {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      background: #f8fdff;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #d4ebf8;
+      min-height: 160px;
+    }
+
+    .ok { color: #1f7a3e; }
+    .loading { color: #406d8e; }
+    .error { color: #b23a48; }
+
+    .progress-box {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #eef8ff;
+      border: 1px solid #cce7f7;
+      color: #2f5676;
+      font-size: 14px;
+    }
+
+    .vuln-card {
+      border: 1px solid #d4ebf8;
+      padding: 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .severity {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    .severity.HIGH {
+      background: #ffe5e5;
+      color: #b00020;
+    }
+
+    .severity.MEDIUM {
+      background: #fff3cd;
+      color: #8a6d00;
+    }
+
+    .severity.LOW {
+      background: #e7f5ea;
+      color: #1b5e20;
+    }
+
+    .severity.UNKNOWN {
+      background: #eeeeee;
+      color: #444;
+    }
+
+    .file {
+      color: #52718d;
+      font-style: italic;
+      margin-top: 6px;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 12px;
+      margin-bottom: 4px;
+      color: #234866;
+    }
+
+    .summary-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: #e8f5fd;
+      color: #2d5c80;
+      border: 1px solid #cbe5f4;
+    }
+
+    .history-item {
+      border: 1px solid #d4ebf8;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f8fdff;
+      cursor: pointer;
+    }
+
+    .history-item:hover {
+      background: #eef8ff;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #62819d;
+    }
+
+    .section-divider {
+      height: 1px;
+      background: #d7edf9;
+      margin: 18px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">Z.E Family</div>
+
+  <div class="layout">
+
+    <div class="card">
+      <h1>AI Code Security Scanner</h1>
+      <p>Scan public GitHub repositories or upload a ZIP archive of a Python project.</p>
+
+      <h3>GitHub scan</h3>
+      <input
+        id="scanName"
+        type="text"
+        placeholder="Optional scan name (example: Auth module scan)"
+      />
+
+      <input
+        id="repoUrl"
+        type="text"
+        placeholder="https://github.com/user/repo"
+      />
+
+      <div class="button-row">
+        <button onclick="scanRepo()">Scan GitHub Repo</button>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3>ZIP scan</h3>
+      <input
+        id="zipScanName"
+        type="text"
+        placeholder="Optional ZIP scan name"
+      />
+
+      <input id="zipFile" type="file" accept=".zip" />
+
+      <div class="button-row">
+        <button onclick="scanZip()">Scan ZIP File</button>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3>View controls</h3>
+      <select id="severityFilter">
+        <option value="ALL">Show all severities</option>
+        <option value="HIGH">Only HIGH</option>
+        <option value="MEDIUM">Only MEDIUM</option>
+        <option value="LOW">Only LOW</option>
+      </select>
+
+      <div class="button-row">
+        <button class="secondary" onclick="clearCurrentView()">Clear result</button>
+        <button class="secondary" onclick="exportCurrentReport()">Export current JSON</button>
+        <button class="danger" onclick="clearHistory()">Clear history</button>
+      </div>
+
+      <div id="status"></div>
+      <div id="summary"></div>
+      <div class="summary-badges" id="summaryBadges"></div>
+      <div class="progress-box" id="progressBox">Ready.</div>
+      <div id="result">Security report will appear here...</div>
+    </div>
+
+    <div class="card">
+      <h2>Recent scans</h2>
+      <div id="historyList">No scans yet.</div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentReport = [];
+    let currentScanId = null;
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setProgress(text) {
+      document.getElementById("progressBox").textContent = text;
+    }
+
+    function clearCurrentView() {
+      currentReport = [];
+      currentScanId = null;
+      document.getElementById("status").className = "";
+      document.getElementById("status").textContent = "";
+      document.getElementById("summary").textContent = "";
+      document.getElementById("summaryBadges").innerHTML = "";
+      document.getElementById("result").textContent = "Security report will appear here...";
+      setProgress("Ready.");
+    }
+
+    function applySeverityFilter(items) {
+      const filter = document.getElementById("severityFilter").value;
+
+      if (filter === "ALL") {
+        return items;
+      }
+
+      return items.filter(item => (item.severity || "").toUpperCase() === filter);
+    }
+
+    function renderSummary(summary) {
+      const summaryBox = document.getElementById("summary");
+      const badges = document.getElementById("summaryBadges");
+
+      if (!summary) {
+        summaryBox.textContent = "";
+        badges.innerHTML = "";
+        return;
+      }
+
+      summaryBox.textContent = `Found ${summary.total || 0} vulnerabilities.`;
+
+      badges.innerHTML = `
+        <span class="badge">HIGH: ${summary.HIGH || 0}</span>
+        <span class="badge">MEDIUM: ${summary.MEDIUM || 0}</span>
+        <span class="badge">LOW: ${summary.LOW || 0}</span>
+        <span class="badge">UNKNOWN: ${summary.UNKNOWN || 0}</span>
+      `;
+    }
+
+    function renderVulnerabilities(items) {
+      const resultBox = document.getElementById("result");
+      const filtered = applySeverityFilter(items);
+
+      resultBox.innerHTML = "";
+
+      if (!Array.isArray(filtered) || filtered.length === 0) {
+        resultBox.textContent = "No vulnerabilities found for the selected filter.";
+        return;
+      }
+
+      filtered.forEach(vuln => {
+        const div = document.createElement("div");
+        div.className = "vuln-card";
+
+        const severity = (vuln.severity || "UNKNOWN").toUpperCase();
+
+        div.innerHTML = `
+          <div>
+            <strong>${escapeHtml(vuln.vulnerability || "Unknown vulnerability")}</strong>
+            <span class="severity ${severity}">${severity}</span>
+          </div>
+
+          <div class="file">
+            📄 ${escapeHtml(vuln.file || "Unknown file")} | 📍 line: ${escapeHtml(vuln.line || "unknown")}
+          </div>
+
+          <div class="section-title">
+            Confidence: ${escapeHtml(vuln.confidence || "MEDIUM")} | Source: ${escapeHtml(vuln.source || "LLM")}
+          </div>
+
+          <div class="section-title">Explanation</div>
+          <div>${escapeHtml(vuln.explanation || "No explanation provided.")}</div>
+
+          <div class="section-title">Fix</div>
+          <div>${escapeHtml(vuln.fix || "No fix provided.")}</div>
+        `;
+
+        resultBox.appendChild(div);
+      });
+    }
+
+    async function loadHistory() {
+      const historyList = document.getElementById("historyList");
+
+      try {
+        const response = await fetch("/history");
+        const data = await response.json();
+
+        if (!response.ok || data.status !== "ok") {
+          historyList.textContent = "Failed to load history.";
+          return;
+        }
+
+        const history = data.history || [];
+
+        if (history.length === 0) {
+          historyList.textContent = "No scans yet.";
+          return;
+        }
+
+        historyList.innerHTML = "";
+
+        history.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "history-item";
+
+          const summary = item.summary || {};
+
+          div.innerHTML = `
+            <strong>${escapeHtml(item.scan_name || "Untitled scan")}</strong>
+            <div class="small">${escapeHtml(item.source_label || "")} • ${escapeHtml(item.repo_url || "")}</div>
+            <div class="small">${escapeHtml(item.created_at || "")}</div>
+            <div class="small">
+              total: ${summary.total || 0},
+              HIGH: ${summary.HIGH || 0},
+              MEDIUM: ${summary.MEDIUM || 0},
+              LOW: ${summary.LOW || 0}
+            </div>
+            <div class="button-row" style="margin-top:8px;">
+              <button class="secondary" onclick="event.stopPropagation(); exportSavedScan('${item.id}')">Export saved</button>
+            </div>
+          `;
+
+          div.onclick = () => openHistoryItem(item.id);
+          historyList.appendChild(div);
+        });
+
+      } catch (error) {
+        historyList.textContent = "Failed to load history.";
+      }
+    }
+
+    async function openHistoryItem(scanId) {
+      try {
+        const response = await fetch(`/history/${scanId}`);
+        const data = await response.json();
+
+        if (!response.ok || data.status !== "ok") {
+          alert("Failed to open saved scan.");
+          return;
+        }
+
+        const item = data.item;
+        currentScanId = item.id;
+        currentReport = item.report || [];
+
+        document.getElementById("status").className = "ok";
+        document.getElementById("status").textContent = "Loaded from history";
+
+        renderSummary(item.summary || {});
+        renderVulnerabilities(currentReport);
+        setProgress("Showing a saved scan from history.");
+
+      } catch (error) {
+        alert("Failed to open saved scan.");
+      }
+    }
+
+    async function clearHistory() {
+      try {
+        const response = await fetch("/history/clear", { method: "POST" });
+        const data = await response.json();
+
+        if (!response.ok || data.status !== "ok") {
+          alert("Failed to clear history.");
+          return;
+        }
+
+        loadHistory();
+      } catch (error) {
+        alert("Failed to clear history.");
+      }
+    }
+
+    function exportCurrentReport() {
+      if (!currentReport || currentReport.length === 0) {
+        alert("There is no current report to export.");
+        return;
+      }
+
+      const blob = new Blob(
+        [JSON.stringify(currentReport, null, 2)],
+        { type: "application/json" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "current_scan_report.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportSavedScan(scanId) {
+      window.location.href = `/export/${scanId}`;
+    }
+
+    async function scanRepo() {
+      const repoUrl = document.getElementById("repoUrl").value.trim();
+      const scanName = document.getElementById("scanName").value.trim();
+      const resultBox = document.getElementById("result");
+      const statusBox = document.getElementById("status");
+
+      if (!repoUrl) {
+        statusBox.className = "error";
+        statusBox.textContent = "Error";
+        document.getElementById("summary").textContent = "";
+        document.getElementById("summaryBadges").innerHTML = "";
+        resultBox.textContent = "Please enter a GitHub repository URL.";
+        return;
+      }
+
+      statusBox.className = "loading";
+      statusBox.textContent = "Scanning...";
+      document.getElementById("summary").textContent = "";
+      document.getElementById("summaryBadges").innerHTML = "";
+      resultBox.textContent = "Repository analysis started. Please wait.";
+      setProgress("Step 1/4: Validating input...");
+      setTimeout(() => setProgress("Step 2/4: Cloning repository..."), 500);
+      setTimeout(() => setProgress("Step 3/4: Reading Python files..."), 1500);
+      setTimeout(() => setProgress("Step 4/4: Sending code to AI and generating report..."), 3000);
+
+      try {
+        const response = await fetch("/scan", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            repo_url: repoUrl,
+            scan_name: scanName
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.status === "error") {
+          statusBox.className = "error";
+          statusBox.textContent = "Error";
+          document.getElementById("summary").textContent = "";
+          document.getElementById("summaryBadges").innerHTML = "";
+          resultBox.textContent = data.report || "Scan failed.";
+          setProgress("Scan failed.");
+          return;
+        }
+
+        statusBox.className = "ok";
+        statusBox.textContent = "Completed";
+
+        try {
+          currentReport = JSON.parse(data.report);
+          currentScanId = data.scan_id || null;
+
+          renderSummary(data.summary || {});
+          renderVulnerabilities(currentReport);
+          loadHistory();
+          setProgress("Scan completed successfully.");
+
+        } catch (e) {
+          document.getElementById("summary").textContent = "";
+          document.getElementById("summaryBadges").innerHTML = "";
+          resultBox.textContent = data.report;
+          setProgress("Scan completed, but report rendering fell back to plain text.");
+        }
+
+      } catch (error) {
+        statusBox.className = "error";
+        statusBox.textContent = "Error";
+        document.getElementById("summary").textContent = "";
+        document.getElementById("summaryBadges").innerHTML = "";
+        resultBox.textContent = "Request failed: " + error;
+        setProgress("Request failed.");
+      }
+    }
+
+    async function scanZip() {
+      const fileInput = document.getElementById("zipFile");
+      const scanName = document.getElementById("zipScanName").value.trim();
+      const resultBox = document.getElementById("result");
+      const statusBox = document.getElementById("status");
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        statusBox.className = "error";
+        statusBox.textContent = "Error";
+        resultBox.textContent = "Please select a ZIP file.";
+        return;
+      }
+
+      const file = fileInput.files[0];
+
+      statusBox.className = "loading";
+      statusBox.textContent = "Scanning ZIP...";
+      document.getElementById("summary").textContent = "";
+      document.getElementById("summaryBadges").innerHTML = "";
+      resultBox.textContent = "ZIP analysis started. Please wait.";
+      setProgress("Step 1/4: Uploading ZIP...");
+      setTimeout(() => setProgress("Step 2/4: Extracting project files..."), 500);
+      setTimeout(() => setProgress("Step 3/4: Reading Python files..."), 1500);
+      setTimeout(() => setProgress("Step 4/4: Sending code to AI and generating report..."), 3000);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("scan_name", scanName);
+
+        const response = await fetch("/scan-zip", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.status === "error") {
+          statusBox.className = "error";
+          statusBox.textContent = "Error";
+          resultBox.textContent = data.report || "ZIP scan failed.";
+          setProgress("ZIP scan failed.");
+          return;
+        }
+
+        statusBox.className = "ok";
+        statusBox.textContent = "Completed";
+
+        try {
+          currentReport = JSON.parse(data.report);
+          currentScanId = data.scan_id || null;
+
+          renderSummary(data.summary || {});
+          renderVulnerabilities(currentReport);
+          loadHistory();
+          setProgress("ZIP scan completed successfully.");
+
+        } catch (e) {
+          resultBox.textContent = data.report;
+          setProgress("ZIP scan completed, but report rendering fell back to plain text.");
+        }
+
+      } catch (error) {
+        statusBox.className = "error";
+        statusBox.textContent = "Error";
+        resultBox.textContent = "Request failed: " + error;
+        setProgress("ZIP request failed.");
+      }
+    }
+
+    document.getElementById("severityFilter").addEventListener("change", () => {
+      renderVulnerabilities(currentReport);
+    });
+
+    loadHistory();
+  </script>
+</body>
+</html>

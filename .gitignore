@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+cloned_repo_*/
+uploaded_repo_*/
+scans_history.json
