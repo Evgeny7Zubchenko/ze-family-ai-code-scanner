@@ -27,21 +27,30 @@ def validate_repo_url(repo_url):
     if len(parts) < 2:
         raise Exception("Invalid GitHub repository URL.")
 
+import requests
+import zipfile
+import io
 
 def clone_repo(repo_url):
-    folder_name = f"cloned_repo_{uuid.uuid4().hex[:8]}"
+    # превращаем github url в zip
+    if repo_url.endswith(".git"):
+        repo_url = repo_url[:-4]
 
-    result = subprocess.run(
-        ["git", "clone", "--depth", "1", repo_url, folder_name],
-        capture_output=True,
-        text=True
-    )
+    zip_url = repo_url + "/archive/refs/heads/main.zip"
 
-    if result.returncode != 0:
-        raise Exception(f"Git clone failed: {result.stderr}")
+    response = requests.get(zip_url)
 
-    return folder_name
+    if response.status_code != 200:
+        raise Exception("Failed to download repository")
 
+    zip_bytes = io.BytesIO(response.content)
+
+    extract_folder = f"cloned_repo_{uuid.uuid4().hex[:8]}"
+
+    with zipfile.ZipFile(zip_bytes, 'r') as zip_ref:
+        zip_ref.extractall(extract_folder)
+
+    return extract_folder
 
 def extract_zip_to_temp(uploaded_file):
     folder_name = f"uploaded_repo_{uuid.uuid4().hex[:8]}"
