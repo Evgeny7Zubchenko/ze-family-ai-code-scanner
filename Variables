@@ -1,0 +1,7 @@
+OPENAI_API_KEY=твой_openai_ключ
+STRIPE_SECRET_KEY=твой_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=твой_webhook_secret
+STRIPE_PRICE_ID_WEEK=price_xxx
+STRIPE_PRICE_ID_MONTH=price_xxx
+STRIPE_PRICE_ID_6MONTHS=price_xxx
+APP_BASE_URL=https://ze-family-ai-code-scanner-production.up.railway.app/

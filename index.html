@@ -8,8 +8,8 @@
     :root {
       --bg-1: #edf9ff;
       --bg-2: #dff2ff;
-      --card: rgba(255, 255, 255, 0.94);
-      --card-border: rgba(150, 205, 235, 0.5);
+      --card: rgba(255,255,255,0.95);
+      --card-border: rgba(150,205,235,0.5);
       --text: #19354d;
       --muted: #5a7a96;
       --primary: #5aa7d6;
@@ -18,14 +18,11 @@
       --danger: #cf6784;
       --danger-dark: #b7516c;
       --success: #2f8a53;
-      --warning: #c27a00;
-      --shadow: 0 12px 30px rgba(80, 140, 180, 0.14);
+      --shadow: 0 12px 30px rgba(80,140,180,0.14);
       --radius: 18px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -39,32 +36,29 @@
     }
 
     .page {
-      max-width: 1120px;
+      max-width: 1160px;
       margin: 0 auto;
     }
 
     .topbar {
       display: flex;
       justify-content: flex-end;
-      align-items: center;
-      margin-bottom: 18px;
-      color: #2f6288;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      font-size: 14px;
+      margin-bottom: 16px;
     }
 
     .brand-badge {
       padding: 10px 14px;
-      background: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.8);
       border: 1px solid var(--card-border);
       border-radius: 999px;
-      box-shadow: 0 6px 16px rgba(90, 150, 190, 0.12);
-      backdrop-filter: blur(8px);
+      font-weight: 800;
+      color: #2f6288;
+      letter-spacing: 0.08em;
+      box-shadow: 0 6px 16px rgba(90,150,190,0.12);
     }
 
     .hero {
-      background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(242,250,255,0.95));
+      background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242,250,255,0.96));
       border: 1px solid var(--card-border);
       box-shadow: var(--shadow);
       border-radius: 24px;
@@ -89,7 +83,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 1.25fr 0.75fr;
+      grid-template-columns: 1.1fr 0.9fr;
       gap: 18px;
     }
 
@@ -99,7 +93,6 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 20px;
-      backdrop-filter: blur(8px);
     }
 
     h2, h3 {
@@ -112,13 +105,8 @@
       line-height: 1.55;
     }
 
-    .section {
-      margin-bottom: 22px;
-    }
-
-    .section:last-child {
-      margin-bottom: 0;
-    }
+    .section { margin-bottom: 22px; }
+    .section:last-child { margin-bottom: 0; }
 
     .section-label {
       font-size: 13px;
@@ -129,28 +117,17 @@
       font-weight: 700;
     }
 
-    .input,
-    .select,
-    input[type="text"],
-    input[type="file"],
-    select {
+    input, select {
       width: 100%;
       padding: 14px 15px;
       font-size: 16px;
       border-radius: 14px;
       border: 1px solid #c8e3f2;
-      background: rgba(250, 254, 255, 0.95);
+      background: rgba(250,254,255,0.95);
       color: var(--text);
       outline: none;
       margin-top: 8px;
       margin-bottom: 12px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
-    }
-
-    input:focus,
-    select:focus {
-      border-color: #85bfe2;
-      box-shadow: 0 0 0 3px rgba(112, 180, 222, 0.16);
     }
 
     .button-row {
@@ -169,13 +146,7 @@
       cursor: pointer;
       color: white;
       background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-      box-shadow: 0 10px 18px rgba(76, 150, 199, 0.22);
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    .btn:hover {
-      opacity: 0.96;
-      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(76,150,199,0.22);
     }
 
     .btn.secondary {
@@ -192,6 +163,38 @@
       margin: 18px 0;
     }
 
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .pricing-card {
+      background: #f8fdff;
+      border: 1px solid #d7edf8;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .pricing-name {
+      font-weight: 800;
+      color: #20496a;
+      margin-bottom: 8px;
+    }
+
+    .pricing-price {
+      font-size: 24px;
+      font-weight: 900;
+      color: #2a5f88;
+      margin-bottom: 8px;
+    }
+
+    .pricing-desc {
+      font-size: 14px;
+      color: #6988a3;
+      min-height: 46px;
+    }
+
     #status {
       font-size: 28px;
       font-weight: 800;
@@ -199,17 +202,9 @@
       margin-bottom: 8px;
     }
 
-    #status.ok {
-      color: var(--success);
-    }
-
-    #status.loading {
-      color: #456f90;
-    }
-
-    #status.error {
-      color: #b3485d;
-    }
+    #status.ok { color: var(--success); }
+    #status.loading { color: #456f90; }
+    #status.error { color: #b3485d; }
 
     #summary {
       color: #375d7a;
@@ -234,6 +229,36 @@
       font-weight: 700;
     }
 
+    .score-card {
+      margin-top: 12px;
+      margin-bottom: 12px;
+      padding: 16px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f5fcff, #ebf7ff);
+      border: 1px solid #d7edf8;
+    }
+
+    .score-title {
+      font-size: 13px;
+      color: #64839c;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .score-value {
+      font-size: 38px;
+      font-weight: 900;
+      color: #214b6d;
+    }
+
+    .score-sub {
+      color: #62819a;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
     .progress-box {
       margin-top: 10px;
       background: linear-gradient(180deg, #f4fbff, #ebf7ff);
@@ -246,7 +271,7 @@
 
     #result {
       margin-top: 14px;
-      background: rgba(248, 253, 255, 0.95);
+      background: rgba(248,253,255,0.95);
       border: 1px solid #d7edf8;
       border-radius: 16px;
       padding: 16px;
@@ -261,11 +286,7 @@
       border-radius: 16px;
       padding: 16px;
       margin-bottom: 14px;
-      box-shadow: 0 8px 18px rgba(90, 150, 190, 0.08);
-    }
-
-    .vuln-card:last-child {
-      margin-bottom: 0;
+      box-shadow: 0 8px 18px rgba(90,150,190,0.08);
     }
 
     .vuln-top {
@@ -291,25 +312,10 @@
       letter-spacing: 0.04em;
     }
 
-    .severity.HIGH {
-      background: #ffe4ea;
-      color: #b22a49;
-    }
-
-    .severity.MEDIUM {
-      background: #fff2d6;
-      color: #996200;
-    }
-
-    .severity.LOW {
-      background: #e6f8eb;
-      color: #1f7e48;
-    }
-
-    .severity.UNKNOWN {
-      background: #efefef;
-      color: #555;
-    }
+    .severity.HIGH { background: #ffe4ea; color: #b22a49; }
+    .severity.MEDIUM { background: #fff2d6; color: #996200; }
+    .severity.LOW { background: #e6f8eb; color: #1f7e48; }
+    .severity.UNKNOWN { background: #efefef; color: #555; }
 
     .vuln-meta {
       color: #587892;
@@ -348,16 +354,10 @@
 
     .history-item {
       border: 1px solid #d8ecf9;
-      background: rgba(248, 253, 255, 0.96);
+      background: rgba(248,253,255,0.96);
       border-radius: 16px;
       padding: 14px;
       cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease;
-    }
-
-    .history-item:hover {
-      background: #eef8ff;
-      transform: translateY(-1px);
     }
 
     .history-title {
@@ -391,8 +391,12 @@
       line-height: 1.5;
     }
 
-    @media (max-width: 920px) {
+    @media (max-width: 980px) {
       .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-grid {
         grid-template-columns: 1fr;
       }
 
@@ -404,7 +408,6 @@
 </head>
 <body>
   <div class="page">
-
     <div class="topbar">
       <div class="brand-badge">Z.E Family</div>
     </div>
@@ -412,15 +415,61 @@
     <div class="hero">
       <h1 class="hero-title">AI Code Security Scanner</h1>
       <p class="hero-subtitle">
-        Проверяй публичные GitHub-репозитории и ZIP-архивы Python-проектов.
-        Получай структурированный отчёт по уязвимостям с severity, confidence,
-        file, line, explanation и fix.
+        Сканируй публичные GitHub-репозитории и ZIP-архивы. Получай AI summary,
+        security score, историю сканов и structured vulnerability report.
       </p>
     </div>
 
     <div class="layout">
 
       <div class="card">
+        <div class="section">
+          <div class="section-label">Account & Plan</div>
+          <input id="email" type="text" placeholder="Твой email (нужен для Pro доступа)" />
+          <div class="button-row">
+            <button class="btn secondary" onclick="checkPlan()">Проверить план</button>
+          </div>
+          <div class="footer-note" id="planInfo">
+            Free: 2 скана в день. Pro: unlimited scans.
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+          <div class="section-label">Upgrade to Pro</div>
+          <div class="pricing-grid">
+            <div class="pricing-card">
+              <div class="pricing-name">Week</div>
+              <div class="pricing-price">7 days</div>
+              <div class="pricing-desc">Быстрый вход, тестовый период, unlimited scans.</div>
+              <div class="button-row">
+                <button class="btn" onclick="startCheckout('week')">Выбрать Week</button>
+              </div>
+            </div>
+
+            <div class="pricing-card">
+              <div class="pricing-name">Month</div>
+              <div class="pricing-price">1 month</div>
+              <div class="pricing-desc">Оптимальный тариф для обычной работы и клиентов.</div>
+              <div class="button-row">
+                <button class="btn" onclick="startCheckout('month')">Выбрать Month</button>
+              </div>
+            </div>
+
+            <div class="pricing-card">
+              <div class="pricing-name">6 Months</div>
+              <div class="pricing-price">6 months</div>
+              <div class="pricing-desc">Лучший вариант для долгой работы и развития бренда.</div>
+              <div class="button-row">
+                <button class="btn" onclick="startCheckout('6months')">Выбрать 6 Months</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="section">
           <div class="section-label">GitHub scan</div>
           <input id="scanName" type="text" placeholder="Необязательное имя сканирования" />
@@ -462,11 +511,18 @@
         <div id="status"></div>
         <div id="summary"></div>
         <div class="summary-badges" id="summaryBadges"></div>
+
+        <div class="score-card">
+          <div class="score-title">Security Score</div>
+          <div class="score-value" id="scoreValue">—</div>
+          <div class="score-sub" id="scoreHint">Появится после сканирования</div>
+        </div>
+
         <div class="progress-box" id="progressBox">Готов к запуску сканирования.</div>
         <div id="result">Здесь появится отчёт по безопасности.</div>
 
         <div class="footer-note">
-          Сейчас сервис поддерживает только публичные GitHub-репозитории и Python-focused MVP анализ.
+          Поддерживаются только публичные GitHub-репозитории. Multi-language MVP: Python, JavaScript, TypeScript.
         </div>
       </div>
 
@@ -497,6 +553,56 @@
       document.getElementById("progressBox").textContent = text;
     }
 
+    function getEmail() {
+      return document.getElementById("email").value.trim().toLowerCase();
+    }
+
+    async function checkPlan() {
+      const email = getEmail();
+
+      if (!email) {
+        document.getElementById("planInfo").textContent = "Сначала введи email.";
+        return;
+      }
+
+      const response = await fetch("/plan-status", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (data.status === "ok") {
+        document.getElementById("planInfo").textContent =
+          `Plan: ${data.plan} | Pro active: ${data.pro_active ? "yes" : "no"} | Can scan: ${data.can_scan ? "yes" : "no"}${data.reason ? " | " + data.reason : ""}`;
+      }
+    }
+
+    async function startCheckout(plan) {
+      const email = getEmail();
+
+      if (!email) {
+        alert("Сначала введи email.");
+        return;
+      }
+
+      const response = await fetch("/create-checkout-session", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email, plan })
+      });
+
+      const data = await response.json();
+
+      if (data.status !== "ok") {
+        alert(data.message || "Не удалось создать Stripe Checkout.");
+        return;
+      }
+
+      window.location.href = data.url;
+    }
+
     function clearCurrentView() {
       currentReport = [];
       currentScanId = null;
@@ -505,37 +611,43 @@
       document.getElementById("summary").textContent = "";
       document.getElementById("summaryBadges").innerHTML = "";
       document.getElementById("result").textContent = "Здесь появится отчёт по безопасности.";
+      document.getElementById("scoreValue").textContent = "—";
+      document.getElementById("scoreHint").textContent = "Появится после сканирования";
       setProgress("Готов к запуску сканирования.");
     }
 
     function applySeverityFilter(items) {
       const filter = document.getElementById("severityFilter").value;
-
-      if (filter === "ALL") {
-        return items;
-      }
-
+      if (filter === "ALL") return items;
       return items.filter(item => (item.severity || "").toUpperCase() === filter);
     }
 
-    function renderSummary(summary) {
+    function renderSummary(summary, aiSummary) {
       const summaryBox = document.getElementById("summary");
       const badges = document.getElementById("summaryBadges");
 
+      summaryBox.textContent = aiSummary || "";
+
       if (!summary) {
-        summaryBox.textContent = "";
         badges.innerHTML = "";
         return;
       }
 
-      summaryBox.textContent = `Найдено ${summary.total || 0} уязвимостей.`;
-
       badges.innerHTML = `
+        <span class="badge">Total: ${summary.total || 0}</span>
         <span class="badge">HIGH: ${summary.HIGH || 0}</span>
         <span class="badge">MEDIUM: ${summary.MEDIUM || 0}</span>
         <span class="badge">LOW: ${summary.LOW || 0}</span>
         <span class="badge">UNKNOWN: ${summary.UNKNOWN || 0}</span>
       `;
+    }
+
+    function renderScore(score) {
+      document.getElementById("scoreValue").textContent = score;
+      document.getElementById("scoreHint").textContent =
+        score >= 85 ? "Сильный результат" :
+        score >= 60 ? "Есть заметные риски" :
+        "Высокий уровень риска";
     }
 
     function renderVulnerabilities(items) {
@@ -612,6 +724,7 @@
             <div class="history-title">${escapeHtml(item.scan_name || "Untitled scan")}</div>
             <div class="small">${escapeHtml(item.source_label || "")} • ${escapeHtml(item.repo_url || "")}</div>
             <div class="small">${escapeHtml(item.created_at || "")}</div>
+            <div class="small">Score: ${item.score ?? "—"}</div>
             <div class="small">
               total: ${summary.total || 0},
               HIGH: ${summary.HIGH || 0},
@@ -649,7 +762,8 @@
         document.getElementById("status").className = "ok";
         document.getElementById("status").textContent = "Загружено из истории";
 
-        renderSummary(item.summary || {});
+        renderSummary(item.summary || {}, item.ai_summary || "");
+        renderScore(item.score ?? "—");
         renderVulnerabilities(currentReport);
         setProgress("Показан ранее сохранённый скан.");
 
@@ -700,14 +814,13 @@
     async function scanRepo() {
       const repoUrl = document.getElementById("repoUrl").value.trim();
       const scanName = document.getElementById("scanName").value.trim();
+      const email = getEmail();
       const resultBox = document.getElementById("result");
       const statusBox = document.getElementById("status");
 
       if (!repoUrl) {
         statusBox.className = "error";
         statusBox.textContent = "Ошибка";
-        document.getElementById("summary").textContent = "";
-        document.getElementById("summaryBadges").innerHTML = "";
         resultBox.textContent = "Пожалуйста, введи ссылку на GitHub-репозиторий.";
         return;
       }
@@ -716,21 +829,22 @@
       statusBox.textContent = "Сканирование...";
       document.getElementById("summary").textContent = "";
       document.getElementById("summaryBadges").innerHTML = "";
+      document.getElementById("scoreValue").textContent = "…";
+      document.getElementById("scoreHint").textContent = "Идёт расчёт";
       resultBox.textContent = "Анализ репозитория запущен. Пожалуйста, подожди.";
       setProgress("Шаг 1/4: Проверка ссылки...");
       setTimeout(() => setProgress("Шаг 2/4: Получение репозитория..."), 500);
-      setTimeout(() => setProgress("Шаг 3/4: Чтение Python-файлов..."), 1500);
-      setTimeout(() => setProgress("Шаг 4/4: Отправка кода в ИИ и генерация отчёта..."), 3000);
+      setTimeout(() => setProgress("Шаг 3/4: Чтение файлов..."), 1500);
+      setTimeout(() => setProgress("Шаг 4/4: Генерация AI отчёта..."), 3000);
 
       try {
         const response = await fetch("/scan", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
             repo_url: repoUrl,
-            scan_name: scanName
+            scan_name: scanName,
+            email
           })
         });
 
@@ -742,6 +856,9 @@
           document.getElementById("summary").textContent = "";
           document.getElementById("summaryBadges").innerHTML = "";
           resultBox.textContent = data.report || "Сканирование не удалось.";
+          if (data.upgrade_required) {
+            document.getElementById("planInfo").textContent = "Free лимит исчерпан. Выбери один из Pro-планов выше.";
+          }
           setProgress("Сканирование завершилось ошибкой.");
           return;
         }
@@ -749,27 +866,19 @@
         statusBox.className = "ok";
         statusBox.textContent = "Готово";
 
-        try {
-          currentReport = JSON.parse(data.report);
-          currentScanId = data.scan_id || null;
+        currentReport = JSON.parse(data.report);
+        currentScanId = data.scan_id || null;
 
-          renderSummary(data.summary || {});
-          renderVulnerabilities(currentReport);
-          loadHistory();
-          setProgress("Сканирование успешно завершено.");
-
-        } catch (e) {
-          document.getElementById("summary").textContent = "";
-          document.getElementById("summaryBadges").innerHTML = "";
-          resultBox.textContent = data.report;
-          setProgress("Отчёт получен, но отображение перешло в текстовый режим.");
-        }
+        renderSummary(data.summary || {}, data.ai_summary || "");
+        renderScore(data.score ?? "—");
+        renderVulnerabilities(currentReport);
+        loadHistory();
+        checkPlan();
+        setProgress("Сканирование успешно завершено.");
 
       } catch (error) {
         statusBox.className = "error";
         statusBox.textContent = "Ошибка";
-        document.getElementById("summary").textContent = "";
-        document.getElementById("summaryBadges").innerHTML = "";
         resultBox.textContent = "Ошибка запроса: " + error;
         setProgress("Запрос завершился ошибкой.");
       }
@@ -778,6 +887,7 @@
     async function scanZip() {
       const fileInput = document.getElementById("zipFile");
       const scanName = document.getElementById("zipScanName").value.trim();
+      const email = getEmail();
       const resultBox = document.getElementById("result");
       const statusBox = document.getElementById("status");
 
@@ -794,16 +904,19 @@
       statusBox.textContent = "Сканирование ZIP...";
       document.getElementById("summary").textContent = "";
       document.getElementById("summaryBadges").innerHTML = "";
+      document.getElementById("scoreValue").textContent = "…";
+      document.getElementById("scoreHint").textContent = "Идёт расчёт";
       resultBox.textContent = "Анализ ZIP запущен. Пожалуйста, подожди.";
       setProgress("Шаг 1/4: Загрузка ZIP...");
       setTimeout(() => setProgress("Шаг 2/4: Распаковка проекта..."), 500);
-      setTimeout(() => setProgress("Шаг 3/4: Чтение Python-файлов..."), 1500);
-      setTimeout(() => setProgress("Шаг 4/4: Отправка кода в ИИ и генерация отчёта..."), 3000);
+      setTimeout(() => setProgress("Шаг 3/4: Чтение файлов..."), 1500);
+      setTimeout(() => setProgress("Шаг 4/4: Генерация AI отчёта..."), 3000);
 
       try {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("scan_name", scanName);
+        formData.append("email", email);
 
         const response = await fetch("/scan-zip", {
           method: "POST",
@@ -816,6 +929,9 @@
           statusBox.className = "error";
           statusBox.textContent = "Ошибка";
           resultBox.textContent = data.report || "ZIP-сканирование не удалось.";
+          if (data.upgrade_required) {
+            document.getElementById("planInfo").textContent = "Free лимит исчерпан. Выбери один из Pro-планов выше.";
+          }
           setProgress("ZIP-сканирование завершилось ошибкой.");
           return;
         }
@@ -823,19 +939,15 @@
         statusBox.className = "ok";
         statusBox.textContent = "Готово";
 
-        try {
-          currentReport = JSON.parse(data.report);
-          currentScanId = data.scan_id || null;
+        currentReport = JSON.parse(data.report);
+        currentScanId = data.scan_id || null;
 
-          renderSummary(data.summary || {});
-          renderVulnerabilities(currentReport);
-          loadHistory();
-          setProgress("ZIP-сканирование успешно завершено.");
-
-        } catch (e) {
-          resultBox.textContent = data.report;
-          setProgress("Отчёт получен, но отображение перешло в текстовый режим.");
-        }
+        renderSummary(data.summary || {}, data.ai_summary || "");
+        renderScore(data.score ?? "—");
+        renderVulnerabilities(currentReport);
+        loadHistory();
+        checkPlan();
+        setProgress("ZIP-сканирование успешно завершено.");
 
       } catch (error) {
         statusBox.className = "error";

@@ -9,17 +9,14 @@ import requests
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-MAX_PY_FILES = 30
-MAX_TOTAL_CHARS = 160000
-
-REQUEST_HEADERS = {
-    "User-Agent": "ZE-Family-AI-Code-Scanner"
-}
+MAX_FILES = 40
+MAX_CHARS = 180000
+HEADERS = {"User-Agent": "ZE-Family-Scanner"}
 
 
-def validate_openai_key():
+def validate_key():
     if not OPENAI_API_KEY:
-        raise Exception("OPENAI_API_KEY is not set on the server.")
+        raise Exception("OPENAI_API_KEY not set")
 
 
 def validate_repo_url(repo_url):
@@ -31,72 +28,41 @@ def validate_repo_url(repo_url):
         raise Exception("Invalid GitHub repository URL.")
 
 
-def parse_github_repo(repo_url):
-    clean_url = repo_url.strip()
-
-    if clean_url.endswith(".git"):
-        clean_url = clean_url[:-4]
-
-    if not clean_url.startswith("https://github.com/"):
-        raise Exception("Only public GitHub URLs are supported.")
-
-    parts = clean_url.replace("https://github.com/", "").strip("/").split("/")
-
-    if len(parts) < 2:
-        raise Exception("Invalid GitHub repository URL.")
-
-    owner = parts[0]
-    repo = parts[1]
-
-    return owner, repo
+def parse_repo(url):
+    clean = url.replace(".git", "").strip()
+    parts = clean.replace("https://github.com/", "").strip("/").split("/")
+    return parts[0], parts[1]
 
 
 def download_repo_zip(owner, repo, branch):
     zip_url = f"https://codeload.github.com/{owner}/{repo}/zip/refs/heads/{branch}"
-
-    response = requests.get(
-        zip_url,
-        headers=REQUEST_HEADERS,
-        timeout=60,
-        allow_redirects=True
-    )
-
+    response = requests.get(zip_url, headers=HEADERS, timeout=60, allow_redirects=True)
     if response.status_code == 200:
         return response.content
-
     return None
 
 
-def clone_repo(repo_url):
-    owner, repo = parse_github_repo(repo_url)
-
-    api_url = f"https://api.github.com/repos/{owner}/{repo}"
+def clone_repo(url):
+    owner, repo = parse_repo(url)
 
     api_response = requests.get(
-        api_url,
-        headers=REQUEST_HEADERS,
+        f"https://api.github.com/repos/{owner}/{repo}",
+        headers=HEADERS,
         timeout=30
     )
 
     branches_to_try = []
 
     if api_response.status_code == 200:
-        repo_data = api_response.json()
-        default_branch = repo_data.get("default_branch")
-
+        default_branch = api_response.json().get("default_branch")
         if default_branch:
             branches_to_try.append(default_branch)
-    else:
-        # если API не сработал, не падаем сразу — пробуем стандартные ветки
-        pass
 
-    # fallback ветки
     for candidate in ["main", "master"]:
         if candidate not in branches_to_try:
             branches_to_try.append(candidate)
 
     zip_bytes = None
-
     for branch in branches_to_try:
         zip_bytes = download_repo_zip(owner, repo, branch)
         if zip_bytes:
@@ -107,102 +73,161 @@ def clone_repo(repo_url):
             raise Exception("Repository not found or is private.")
         if api_response.status_code == 403:
             raise Exception("GitHub API rate limit reached. Try again later.")
-        raise Exception(
-            f"Failed to download repository archive. Tried branches: {', '.join(branches_to_try)}"
-        )
+        raise Exception(f"Failed to download repository archive. Tried branches: {', '.join(branches_to_try)}")
 
-    extract_folder = f"cloned_repo_{uuid.uuid4().hex[:8]}"
-
-    try:
-        with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zip_ref:
-            zip_ref.extractall(extract_folder)
-    except Exception as e:
-        raise Exception(f"Failed to extract repository archive: {str(e)}")
-
-    return extract_folder
+    folder = f"repo_{uuid.uuid4().hex[:6]}"
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+        z.extractall(folder)
+    return folder
 
 
 def extract_zip_to_temp(uploaded_file):
-    folder_name = f"uploaded_repo_{uuid.uuid4().hex[:8]}"
-    os.makedirs(folder_name, exist_ok=True)
+    folder = f"uploaded_repo_{uuid.uuid4().hex[:8]}"
+    os.makedirs(folder, exist_ok=True)
 
     file_bytes = uploaded_file.read()
     zip_buffer = io.BytesIO(file_bytes)
 
     try:
         with zipfile.ZipFile(zip_buffer, "r") as zip_ref:
-            zip_ref.extractall(folder_name)
+            zip_ref.extractall(folder)
     except Exception as e:
         raise Exception(f"Invalid ZIP file: {str(e)}")
 
-    return folder_name
+    return folder
 
 
-def find_python_files(folder):
-    python_files = []
-
-    for root, dirs, files in os.walk(folder):
-        dirs[:] = [
-            d for d in dirs
-            if d not in {".git", "node_modules", ".venv", "venv", "__pycache__"}
-        ]
-
-        for file in files:
-            if file.endswith(".py"):
-                python_files.append(os.path.join(root, file))
-
-    return python_files
+def find_files(folder):
+    files = []
+    for root, dirs, fs in os.walk(folder):
+        dirs[:] = [d for d in dirs if d not in {".git", "node_modules", ".venv", "venv", "__pycache__"}]
+        for f in fs:
+            if f.endswith((".py", ".js", ".ts")):
+                files.append(os.path.join(root, f))
+    return files
 
 
-def collect_project_code(files, max_files=MAX_PY_FILES, max_chars=MAX_TOTAL_CHARS):
-    combined_code = ""
+def collect_code(files):
+    code = ""
     count = 0
 
-    for file_path in files:
-        if count >= max_files:
+    for f in files:
+        if count >= MAX_FILES:
             break
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
+            with open(f, encoding="utf-8") as handle:
+                content = handle.read()
 
-            block = f"\n\n# FILE: {file_path}\n{content}"
+            block = f"\n# FILE: {f}\n{content}"
 
-            if len(combined_code) + len(block) > max_chars:
+            if len(code) + len(block) > MAX_CHARS:
                 break
 
-            combined_code += block
+            code += block
             count += 1
         except Exception:
             pass
 
-    return combined_code, count
+    return code, count
+
+
+def call_ai(code, source_name, file_count):
+    validate_key()
+
+    prompt = f"""
+You are a senior security engineer.
+
+Analyze this repository and return ONLY valid JSON.
+
+Return this exact JSON shape:
+{{
+  "summary": "short executive summary",
+  "vulnerabilities": [
+    {{
+      "vulnerability": "name",
+      "severity": "HIGH|MEDIUM|LOW",
+      "file": "path",
+      "line": "number or unknown",
+      "confidence": "HIGH|MEDIUM|LOW",
+      "source": "LLM",
+      "explanation": "what is wrong",
+      "fix": "how to fix it"
+    }}
+  ]
+}}
+
+Rules:
+- If no vulnerabilities, return:
+  {{
+    "summary": "No significant security issues found.",
+    "vulnerabilities": []
+  }}
+- No markdown
+- No explanations outside JSON
+- Focus on real security issues, not style issues
+- Avoid duplicates
+- Sort more severe issues first
+
+Source:
+{source_name}
+
+Analyzed files count:
+{file_count}
+
+CODE:
+{code}
+"""
+
+    r = requests.post(
+        "https://api.openai.com/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "gpt-4.1-mini",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2
+        },
+        timeout=180
+    )
+
+    if r.status_code != 200:
+        raise Exception(f"OpenAI error: {r.status_code} {r.text}")
+
+    return r.json()["choices"][0]["message"]["content"]
+
+
+def calc_score(vulns):
+    score = 100
+    for v in vulns:
+        sev = str(v.get("severity", "")).upper()
+        if sev == "HIGH":
+            score -= 25
+        elif sev == "MEDIUM":
+            score -= 10
+        elif sev == "LOW":
+            score -= 3
+    return max(score, 0)
 
 
 def severity_rank(severity):
-    mapping = {
-        "HIGH": 3,
-        "MEDIUM": 2,
-        "LOW": 1,
-        "UNKNOWN": 0
-    }
-    return mapping.get(str(severity).upper(), 0)
+    return {"HIGH": 3, "MEDIUM": 2, "LOW": 1, "UNKNOWN": 0}.get(str(severity).upper(), 0)
 
 
-def deduplicate_vulnerabilities(items):
+def dedupe(vulns):
     seen = set()
     result = []
 
-    for item in items:
+    for item in vulns:
         key = (
-            str(item.get("vulnerability", "")).strip().lower(),
-            str(item.get("file", "")).strip().lower(),
-            str(item.get("line", "")).strip().lower()
+            str(item.get("vulnerability", "")).lower().strip(),
+            str(item.get("file", "")).lower().strip(),
+            str(item.get("line", "")).lower().strip()
         )
-
         if key in seen:
             continue
-
         seen.add(key)
         result.append(item)
 
@@ -210,151 +235,83 @@ def deduplicate_vulnerabilities(items):
     return result
 
 
-def call_openai_for_report(project_code, source_name, file_count):
-    validate_openai_key()
-
-    url = "https://api.openai.com/v1/chat/completions"
-
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    prompt = f"""
-You are a senior security engineer.
-
-Analyze this Python repository sample and return ONLY valid JSON.
-
-Source:
-{source_name}
-
-Analyzed Python files count:
-{file_count}
-
-Rules:
-1. Return a JSON array
-2. If no vulnerabilities, return []
-3. No markdown
-4. No explanations outside JSON
-5. Focus on real security issues, not generic style issues
-6. Avoid duplicates
-7. Sort more severe issues first
-
-Each item MUST contain:
-- vulnerability
-- severity (LOW, MEDIUM, HIGH)
-- file
-- line (number or "unknown")
-- confidence (LOW, MEDIUM, HIGH)
-- source (LLM)
-- explanation
-- fix
-
-Repository code:
-{project_code}
-"""
-
-    payload = {
-        "model": "gpt-4.1-mini",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.2
-    }
-
-    response = requests.post(url, headers=headers, json=payload, timeout=180)
-
-    if response.status_code != 200:
-        raise Exception(f"OpenAI API error: {response.status_code} {response.text}")
-
-    data = response.json()
-    return data["choices"][0]["message"]["content"].strip()
-
-
-def generate_security_report(project_code, source_name, file_count):
-    content = call_openai_for_report(project_code, source_name, file_count)
-
+def normalize_response(raw_text):
     try:
-        parsed = json.loads(content)
-
-        if not isinstance(parsed, list):
-            parsed = []
-
-        normalized = []
-
-        for item in parsed:
-            if not isinstance(item, dict):
-                continue
-
-            normalized.append({
-                "vulnerability": str(item.get("vulnerability", "Unknown vulnerability")),
-                "severity": str(item.get("severity", "UNKNOWN")).upper(),
-                "file": str(item.get("file", "Unknown file")),
-                "line": str(item.get("line", "unknown")),
-                "confidence": str(item.get("confidence", "MEDIUM")).upper(),
-                "source": str(item.get("source", "LLM")),
-                "explanation": str(item.get("explanation", "No explanation provided.")),
-                "fix": str(item.get("fix", "No fix provided."))
-            })
-
-        normalized = deduplicate_vulnerabilities(normalized)
-        return json.dumps(normalized, ensure_ascii=False)
-
-    except json.JSONDecodeError:
-        fallback = [
-            {
-                "vulnerability": "ParsingError",
-                "severity": "LOW",
-                "file": "unknown",
-                "line": "unknown",
-                "confidence": "LOW",
-                "source": "LLM",
-                "explanation": "Model returned non-JSON output.",
-                "fix": content
-            }
-        ]
-        return json.dumps(fallback, ensure_ascii=False)
-
-
-def cleanup_folder(folder_path):
-    try:
-        if os.path.exists(folder_path):
-            shutil.rmtree(folder_path, ignore_errors=True)
+        data = json.loads(raw_text)
     except Exception:
-        pass
+        return {
+            "summary": "The model returned non-JSON output.",
+            "score": 0,
+            "vulnerabilities": [
+                {
+                    "vulnerability": "ParsingError",
+                    "severity": "LOW",
+                    "file": "unknown",
+                    "line": "unknown",
+                    "confidence": "LOW",
+                    "source": "LLM",
+                    "explanation": "Model returned non-JSON output.",
+                    "fix": raw_text
+                }
+            ]
+        }
+
+    summary = str(data.get("summary", "No summary provided."))
+    vulns = data.get("vulnerabilities", [])
+
+    if not isinstance(vulns, list):
+        vulns = []
+
+    normalized = []
+    for item in vulns:
+        if not isinstance(item, dict):
+            continue
+
+        normalized.append({
+            "vulnerability": str(item.get("vulnerability", "Unknown vulnerability")),
+            "severity": str(item.get("severity", "UNKNOWN")).upper(),
+            "file": str(item.get("file", "Unknown file")),
+            "line": str(item.get("line", "unknown")),
+            "confidence": str(item.get("confidence", "MEDIUM")).upper(),
+            "source": str(item.get("source", "LLM")),
+            "explanation": str(item.get("explanation", "No explanation provided.")),
+            "fix": str(item.get("fix", "No fix provided."))
+        })
+
+    normalized = dedupe(normalized)
+
+    return {
+        "summary": summary,
+        "score": calc_score(normalized),
+        "vulnerabilities": normalized
+    }
 
 
 def analyze_folder(folder_path, source_name):
-    files = find_python_files(folder_path)
+    files = find_files(folder_path)
+    code, count = collect_code(files)
 
-    if not files:
-        raise Exception("No Python files found in the project.")
-
-    project_code, file_count = collect_project_code(files)
-
-    if file_count == 0 or not project_code.strip():
+    if count == 0 or not code.strip():
         raise Exception("Could not read project code.")
 
-    if file_count >= MAX_PY_FILES:
-        source_name = f"{source_name} (truncated to first {MAX_PY_FILES} Python files)"
-
-    return generate_security_report(project_code, source_name, file_count)
+    raw = call_ai(code, source_name, count)
+    return normalize_response(raw)
 
 
 def run_agent(repo_url):
     validate_repo_url(repo_url)
-    project_folder = clone_repo(repo_url)
+    folder = clone_repo(repo_url)
 
     try:
-        return analyze_folder(project_folder, repo_url)
+        return analyze_folder(folder, repo_url)
     finally:
-        cleanup_folder(project_folder)
+        shutil.rmtree(folder, ignore_errors=True)
 
 
 def run_agent_from_zip(uploaded_file):
-    project_folder = extract_zip_to_temp(uploaded_file)
+    folder = extract_zip_to_temp(uploaded_file)
 
     try:
-        return analyze_folder(project_folder, uploaded_file.filename)
+        return analyze_folder(folder, uploaded_file.filename)
     finally:
-        cleanup_folder(project_folder)
+        shutil.rmtree(folder, ignore_errors=True)
