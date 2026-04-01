@@ -4,7 +4,6 @@ import uuid
 import json
 import shutil
 import zipfile
-import subprocess
 import requests
 
 
@@ -27,30 +26,50 @@ def validate_repo_url(repo_url):
     if len(parts) < 2:
         raise Exception("Invalid GitHub repository URL.")
 
-import requests
-import zipfile
-import io
 
 def clone_repo(repo_url):
-    # превращаем github url в zip
-    if repo_url.endswith(".git"):
-        repo_url = repo_url[:-4]
+    clean_url = repo_url.strip()
 
-    zip_url = repo_url + "/archive/refs/heads/main.zip"
+    if clean_url.endswith(".git"):
+        clean_url = clean_url[:-4]
 
-    response = requests.get(zip_url)
+    if not clean_url.startswith("https://github.com/"):
+        raise Exception("Only public GitHub URLs are supported.")
 
-    if response.status_code != 200:
-        raise Exception("Failed to download repository")
+    parts = clean_url.replace("https://github.com/", "").strip("/").split("/")
 
-    zip_bytes = io.BytesIO(response.content)
+    if len(parts) < 2:
+        raise Exception("Invalid GitHub repository URL.")
 
+    owner = parts[0]
+    repo = parts[1]
+
+    api_url = f"https://api.github.com/repos/{owner}/{repo}"
+    api_response = requests.get(api_url, timeout=30)
+
+    if api_response.status_code != 200:
+        raise Exception("Failed to fetch repository metadata. Make sure the repo is public and exists.")
+
+    repo_data = api_response.json()
+    default_branch = repo_data.get("default_branch")
+
+    if not default_branch:
+        raise Exception("Could not determine repository default branch.")
+
+    zip_url = f"https://codeload.github.com/{owner}/{repo}/zip/refs/heads/{default_branch}"
+    zip_response = requests.get(zip_url, timeout=60)
+
+    if zip_response.status_code != 200:
+        raise Exception("Failed to download repository archive.")
+
+    zip_bytes = io.BytesIO(zip_response.content)
     extract_folder = f"cloned_repo_{uuid.uuid4().hex[:8]}"
 
-    with zipfile.ZipFile(zip_bytes, 'r') as zip_ref:
+    with zipfile.ZipFile(zip_bytes, "r") as zip_ref:
         zip_ref.extractall(extract_folder)
 
     return extract_folder
+
 
 def extract_zip_to_temp(uploaded_file):
     folder_name = f"uploaded_repo_{uuid.uuid4().hex[:8]}"
@@ -228,7 +247,6 @@ def generate_security_report(project_code, source_name, file_count):
             })
 
         normalized = deduplicate_vulnerabilities(normalized)
-
         return json.dumps(normalized, ensure_ascii=False)
 
     except json.JSONDecodeError:
