@@ -1,285 +1,483 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Z.E Family | AI Code Security Scanner</title>
   <style>
+    :root {
+      --bg-1: #edf9ff;
+      --bg-2: #dff2ff;
+      --card: rgba(255, 255, 255, 0.94);
+      --card-border: rgba(150, 205, 235, 0.5);
+      --text: #19354d;
+      --muted: #5a7a96;
+      --primary: #5aa7d6;
+      --primary-dark: #438fbd;
+      --secondary: #7fc0e6;
+      --danger: #cf6784;
+      --danger-dark: #b7516c;
+      --success: #2f8a53;
+      --warning: #c27a00;
+      --shadow: 0 12px 30px rgba(80, 140, 180, 0.14);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      max-width: 1100px;
-      margin: 24px auto;
-      padding: 16px;
-      background: linear-gradient(180deg, #eaf7ff 0%, #dff2ff 100%);
-      color: #18324a;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.95), transparent 35%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
     }
 
     .topbar {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 12px;
-      font-weight: bold;
-      color: #2b5d87;
-      letter-spacing: 0.5px;
+      align-items: center;
+      margin-bottom: 18px;
+      color: #2f6288;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 14px;
+    }
+
+    .brand-badge {
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid var(--card-border);
+      border-radius: 999px;
+      box-shadow: 0 6px 16px rgba(90, 150, 190, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(242,250,255,0.95));
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      border-radius: 24px;
+      padding: 26px 22px;
+      margin-bottom: 18px;
+    }
+
+    .hero-title {
+      margin: 0 0 8px 0;
+      font-size: 34px;
+      line-height: 1.05;
+      color: #214b6e;
+    }
+
+    .hero-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+      max-width: 780px;
     }
 
     .layout {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 18px;
     }
 
     .card {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
       padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(65, 125, 176, 0.12);
-      border: 1px solid rgba(120, 180, 220, 0.35);
+      backdrop-filter: blur(8px);
     }
 
-    h1, h2, h3 {
+    h2, h3 {
       margin-top: 0;
-      color: #224b6e;
+      color: #234d71;
     }
 
     p {
-      color: #375d7d;
+      color: var(--muted);
+      line-height: 1.55;
     }
 
-    input, select {
+    .section {
+      margin-bottom: 22px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6d8aa1;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .input,
+    .select,
+    input[type="text"],
+    input[type="file"],
+    select {
       width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      margin-bottom: 12px;
+      padding: 14px 15px;
       font-size: 16px;
-      box-sizing: border-box;
-      border: 1px solid #b8d9ee;
-      border-radius: 10px;
-      background: #f8fdff;
-      color: #18324a;
+      border-radius: 14px;
+      border: 1px solid #c8e3f2;
+      background: rgba(250, 254, 255, 0.95);
+      color: var(--text);
+      outline: none;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #85bfe2;
+      box-shadow: 0 0 0 3px rgba(112, 180, 222, 0.16);
     }
 
     .button-row {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 6px;
+      margin-top: 8px;
     }
 
-    button {
-      padding: 12px 16px;
-      font-size: 15px;
-      cursor: pointer;
+    .btn {
       border: none;
-      border-radius: 10px;
-      background: #4a90c2;
+      border-radius: 14px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
       color: white;
-      box-shadow: 0 4px 12px rgba(74, 144, 194, 0.2);
+      background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+      box-shadow: 0 10px 18px rgba(76, 150, 199, 0.22);
+      transition: transform 0.15s ease, opacity 0.15s ease;
     }
 
-    button.secondary {
-      background: #6faed8;
+    .btn:hover {
+      opacity: 0.96;
+      transform: translateY(-1px);
     }
 
-    button.danger {
-      background: #c95f7a;
+    .btn.secondary {
+      background: linear-gradient(180deg, var(--secondary), #68add8);
+    }
+
+    .btn.danger {
+      background: linear-gradient(180deg, var(--danger), var(--danger-dark));
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #cde7f5, transparent);
+      margin: 18px 0;
     }
 
     #status {
-      margin-top: 18px;
-      font-weight: bold;
+      font-size: 28px;
+      font-weight: 800;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+
+    #status.ok {
+      color: var(--success);
+    }
+
+    #status.loading {
+      color: #456f90;
+    }
+
+    #status.error {
+      color: #b3485d;
     }
 
     #summary {
-      margin-top: 10px;
-      font-size: 15px;
-      color: #2f5676;
-    }
-
-    #result {
-      margin-top: 12px;
-      white-space: pre-wrap;
-      background: #f8fdff;
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid #d4ebf8;
-      min-height: 160px;
-    }
-
-    .ok { color: #1f7a3e; }
-    .loading { color: #406d8e; }
-    .error { color: #b23a48; }
-
-    .progress-box {
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 10px;
-      background: #eef8ff;
-      border: 1px solid #cce7f7;
-      color: #2f5676;
-      font-size: 14px;
-    }
-
-    .vuln-card {
-      border: 1px solid #d4ebf8;
-      padding: 14px;
-      margin-bottom: 12px;
-      border-radius: 12px;
-      background: white;
-    }
-
-    .severity {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      margin-left: 8px;
-    }
-
-    .severity.HIGH {
-      background: #ffe5e5;
-      color: #b00020;
-    }
-
-    .severity.MEDIUM {
-      background: #fff3cd;
-      color: #8a6d00;
-    }
-
-    .severity.LOW {
-      background: #e7f5ea;
-      color: #1b5e20;
-    }
-
-    .severity.UNKNOWN {
-      background: #eeeeee;
-      color: #444;
-    }
-
-    .file {
-      color: #52718d;
-      font-style: italic;
-      margin-top: 6px;
-    }
-
-    .section-title {
-      font-weight: bold;
-      margin-top: 12px;
-      margin-bottom: 4px;
-      color: #234866;
+      color: #375d7a;
+      font-size: 16px;
+      margin-bottom: 8px;
     }
 
     .summary-badges {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 8px;
+      margin-bottom: 12px;
     }
 
     .badge {
-      padding: 6px 10px;
+      padding: 8px 12px;
       border-radius: 999px;
       font-size: 13px;
-      background: #e8f5fd;
-      color: #2d5c80;
-      border: 1px solid #cbe5f4;
+      background: #edf8ff;
+      color: #325a78;
+      border: 1px solid #d0e9f8;
+      font-weight: 700;
+    }
+
+    .progress-box {
+      margin-top: 10px;
+      background: linear-gradient(180deg, #f4fbff, #ebf7ff);
+      border: 1px solid #d7edf8;
+      border-radius: 14px;
+      padding: 14px;
+      color: #446a88;
+      font-size: 15px;
+    }
+
+    #result {
+      margin-top: 14px;
+      background: rgba(248, 253, 255, 0.95);
+      border: 1px solid #d7edf8;
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 180px;
+      color: #284b67;
+      white-space: pre-wrap;
+    }
+
+    .vuln-card {
+      background: white;
+      border: 1px solid #d8ecf9;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 18px rgba(90, 150, 190, 0.08);
+    }
+
+    .vuln-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .vuln-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .vuln-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1f4868;
+    }
+
+    .severity {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .severity.HIGH {
+      background: #ffe4ea;
+      color: #b22a49;
+    }
+
+    .severity.MEDIUM {
+      background: #fff2d6;
+      color: #996200;
+    }
+
+    .severity.LOW {
+      background: #e6f8eb;
+      color: #1f7e48;
+    }
+
+    .severity.UNKNOWN {
+      background: #efefef;
+      color: #555;
+    }
+
+    .vuln-meta {
+      color: #587892;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .meta-pill {
+      display: inline-block;
+      margin-right: 8px;
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f0f8fd;
+      border: 1px solid #d7ebf8;
+      font-size: 12px;
+      font-weight: 700;
+      color: #3c6483;
+    }
+
+    .section-title {
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-weight: 800;
+      color: #224c6d;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .history-item {
-      border: 1px solid #d4ebf8;
-      border-radius: 12px;
-      padding: 10px;
-      margin-bottom: 10px;
-      background: #f8fdff;
+      border: 1px solid #d8ecf9;
+      background: rgba(248, 253, 255, 0.96);
+      border-radius: 16px;
+      padding: 14px;
       cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
 
     .history-item:hover {
       background: #eef8ff;
+      transform: translateY(-1px);
+    }
+
+    .history-title {
+      font-weight: 800;
+      color: #20496a;
+      margin-bottom: 6px;
     }
 
     .small {
       font-size: 13px;
-      color: #62819d;
+      color: #64839c;
+      line-height: 1.5;
     }
 
-    .section-divider {
-      height: 1px;
-      background: #d7edf9;
-      margin: 18px 0;
+    .history-actions {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .empty-state {
+      color: #67849c;
+      font-size: 15px;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      color: #6f8ca3;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-title {
+        font-size: 28px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="topbar">Z.E Family</div>
+  <div class="page">
 
-  <div class="layout">
-
-    <div class="card">
-      <h1>AI Code Security Scanner</h1>
-      <p>Scan public GitHub repositories or upload a ZIP archive of a Python project.</p>
-
-      <h3>GitHub scan</h3>
-      <input
-        id="scanName"
-        type="text"
-        placeholder="Optional scan name (example: Auth module scan)"
-      />
-
-      <input
-        id="repoUrl"
-        type="text"
-        placeholder="https://github.com/user/repo"
-      />
-
-      <div class="button-row">
-        <button onclick="scanRepo()">Scan GitHub Repo</button>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <h3>ZIP scan</h3>
-      <input
-        id="zipScanName"
-        type="text"
-        placeholder="Optional ZIP scan name"
-      />
-
-      <input id="zipFile" type="file" accept=".zip" />
-
-      <div class="button-row">
-        <button onclick="scanZip()">Scan ZIP File</button>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <h3>View controls</h3>
-      <select id="severityFilter">
-        <option value="ALL">Show all severities</option>
-        <option value="HIGH">Only HIGH</option>
-        <option value="MEDIUM">Only MEDIUM</option>
-        <option value="LOW">Only LOW</option>
-      </select>
-
-      <div class="button-row">
-        <button class="secondary" onclick="clearCurrentView()">Clear result</button>
-        <button class="secondary" onclick="exportCurrentReport()">Export current JSON</button>
-        <button class="danger" onclick="clearHistory()">Clear history</button>
-      </div>
-
-      <div id="status"></div>
-      <div id="summary"></div>
-      <div class="summary-badges" id="summaryBadges"></div>
-      <div class="progress-box" id="progressBox">Ready.</div>
-      <div id="result">Security report will appear here...</div>
+    <div class="topbar">
+      <div class="brand-badge">Z.E Family</div>
     </div>
 
-    <div class="card">
-      <h2>Recent scans</h2>
-      <div id="historyList">No scans yet.</div>
+    <div class="hero">
+      <h1 class="hero-title">AI Code Security Scanner</h1>
+      <p class="hero-subtitle">
+        Проверяй публичные GitHub-репозитории и ZIP-архивы Python-проектов.
+        Получай структурированный отчёт по уязвимостям с severity, confidence,
+        file, line, explanation и fix.
+      </p>
     </div>
 
+    <div class="layout">
+
+      <div class="card">
+        <div class="section">
+          <div class="section-label">GitHub scan</div>
+          <input id="scanName" type="text" placeholder="Необязательное имя сканирования" />
+          <input id="repoUrl" type="text" placeholder="https://github.com/user/repo" />
+          <div class="button-row">
+            <button class="btn" onclick="scanRepo()">Сканировать GitHub-репозиторий</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+          <div class="section-label">ZIP scan</div>
+          <input id="zipScanName" type="text" placeholder="Необязательное имя для ZIP-сканирования" />
+          <input id="zipFile" type="file" accept=".zip" />
+          <div class="button-row">
+            <button class="btn" onclick="scanZip()">Сканировать ZIP-файл</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+          <div class="section-label">View controls</div>
+          <select id="severityFilter">
+            <option value="ALL">Показать все уровни серьезности</option>
+            <option value="HIGH">Только HIGH</option>
+            <option value="MEDIUM">Только MEDIUM</option>
+            <option value="LOW">Только LOW</option>
+          </select>
+
+          <div class="button-row">
+            <button class="btn secondary" onclick="clearCurrentView()">Очистить результат</button>
+            <button class="btn secondary" onclick="exportCurrentReport()">Экспорт текущего JSON</button>
+            <button class="btn danger" onclick="clearHistory()">Очистить историю</button>
+          </div>
+        </div>
+
+        <div id="status"></div>
+        <div id="summary"></div>
+        <div class="summary-badges" id="summaryBadges"></div>
+        <div class="progress-box" id="progressBox">Готов к запуску сканирования.</div>
+        <div id="result">Здесь появится отчёт по безопасности.</div>
+
+        <div class="footer-note">
+          Сейчас сервис поддерживает только публичные GitHub-репозитории и Python-focused MVP анализ.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Recent scans</h2>
+        <div class="history-list" id="historyList">
+          <div class="empty-state">История сканов пока пуста.</div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <script>
@@ -306,8 +504,8 @@
       document.getElementById("status").textContent = "";
       document.getElementById("summary").textContent = "";
       document.getElementById("summaryBadges").innerHTML = "";
-      document.getElementById("result").textContent = "Security report will appear here...";
-      setProgress("Ready.");
+      document.getElementById("result").textContent = "Здесь появится отчёт по безопасности.";
+      setProgress("Готов к запуску сканирования.");
     }
 
     function applySeverityFilter(items) {
@@ -330,7 +528,7 @@
         return;
       }
 
-      summaryBox.textContent = `Found ${summary.total || 0} vulnerabilities.`;
+      summaryBox.textContent = `Найдено ${summary.total || 0} уязвимостей.`;
 
       badges.innerHTML = `
         <span class="badge">HIGH: ${summary.HIGH || 0}</span>
@@ -347,7 +545,7 @@
       resultBox.innerHTML = "";
 
       if (!Array.isArray(filtered) || filtered.length === 0) {
-        resultBox.textContent = "No vulnerabilities found for the selected filter.";
+        resultBox.textContent = "Для выбранного фильтра уязвимости не найдены.";
         return;
       }
 
@@ -358,17 +556,18 @@
         const severity = (vuln.severity || "UNKNOWN").toUpperCase();
 
         div.innerHTML = `
-          <div>
-            <strong>${escapeHtml(vuln.vulnerability || "Unknown vulnerability")}</strong>
+          <div class="vuln-top">
+            <div class="vuln-title">${escapeHtml(vuln.vulnerability || "Unknown vulnerability")}</div>
             <span class="severity ${severity}">${severity}</span>
           </div>
 
-          <div class="file">
+          <div class="vuln-meta">
             📄 ${escapeHtml(vuln.file || "Unknown file")} | 📍 line: ${escapeHtml(vuln.line || "unknown")}
           </div>
 
-          <div class="section-title">
-            Confidence: ${escapeHtml(vuln.confidence || "MEDIUM")} | Source: ${escapeHtml(vuln.source || "LLM")}
+          <div>
+            <span class="meta-pill">Confidence: ${escapeHtml(vuln.confidence || "MEDIUM")}</span>
+            <span class="meta-pill">Source: ${escapeHtml(vuln.source || "LLM")}</span>
           </div>
 
           <div class="section-title">Explanation</div>
@@ -390,14 +589,14 @@
         const data = await response.json();
 
         if (!response.ok || data.status !== "ok") {
-          historyList.textContent = "Failed to load history.";
+          historyList.innerHTML = `<div class="empty-state">Не удалось загрузить историю.</div>`;
           return;
         }
 
         const history = data.history || [];
 
         if (history.length === 0) {
-          historyList.textContent = "No scans yet.";
+          historyList.innerHTML = `<div class="empty-state">История сканов пока пуста.</div>`;
           return;
         }
 
@@ -410,7 +609,7 @@
           const summary = item.summary || {};
 
           div.innerHTML = `
-            <strong>${escapeHtml(item.scan_name || "Untitled scan")}</strong>
+            <div class="history-title">${escapeHtml(item.scan_name || "Untitled scan")}</div>
             <div class="small">${escapeHtml(item.source_label || "")} • ${escapeHtml(item.repo_url || "")}</div>
             <div class="small">${escapeHtml(item.created_at || "")}</div>
             <div class="small">
@@ -419,8 +618,8 @@
               MEDIUM: ${summary.MEDIUM || 0},
               LOW: ${summary.LOW || 0}
             </div>
-            <div class="button-row" style="margin-top:8px;">
-              <button class="secondary" onclick="event.stopPropagation(); exportSavedScan('${item.id}')">Export saved</button>
+            <div class="history-actions">
+              <button class="btn secondary" onclick="event.stopPropagation(); exportSavedScan('${item.id}')">Экспорт saved</button>
             </div>
           `;
 
@@ -429,7 +628,7 @@
         });
 
       } catch (error) {
-        historyList.textContent = "Failed to load history.";
+        historyList.innerHTML = `<div class="empty-state">Не удалось загрузить историю.</div>`;
       }
     }
 
@@ -439,7 +638,7 @@
         const data = await response.json();
 
         if (!response.ok || data.status !== "ok") {
-          alert("Failed to open saved scan.");
+          alert("Не удалось открыть сохранённый скан.");
           return;
         }
 
@@ -448,14 +647,14 @@
         currentReport = item.report || [];
 
         document.getElementById("status").className = "ok";
-        document.getElementById("status").textContent = "Loaded from history";
+        document.getElementById("status").textContent = "Загружено из истории";
 
         renderSummary(item.summary || {});
         renderVulnerabilities(currentReport);
-        setProgress("Showing a saved scan from history.");
+        setProgress("Показан ранее сохранённый скан.");
 
       } catch (error) {
-        alert("Failed to open saved scan.");
+        alert("Не удалось открыть сохранённый скан.");
       }
     }
 
@@ -465,19 +664,19 @@
         const data = await response.json();
 
         if (!response.ok || data.status !== "ok") {
-          alert("Failed to clear history.");
+          alert("Не удалось очистить историю.");
           return;
         }
 
         loadHistory();
       } catch (error) {
-        alert("Failed to clear history.");
+        alert("Не удалось очистить историю.");
       }
     }
 
     function exportCurrentReport() {
       if (!currentReport || currentReport.length === 0) {
-        alert("There is no current report to export.");
+        alert("Нет текущего отчёта для экспорта.");
         return;
       }
 
@@ -506,22 +705,22 @@
 
       if (!repoUrl) {
         statusBox.className = "error";
-        statusBox.textContent = "Error";
+        statusBox.textContent = "Ошибка";
         document.getElementById("summary").textContent = "";
         document.getElementById("summaryBadges").innerHTML = "";
-        resultBox.textContent = "Please enter a GitHub repository URL.";
+        resultBox.textContent = "Пожалуйста, введи ссылку на GitHub-репозиторий.";
         return;
       }
 
       statusBox.className = "loading";
-      statusBox.textContent = "Scanning...";
+      statusBox.textContent = "Сканирование...";
       document.getElementById("summary").textContent = "";
       document.getElementById("summaryBadges").innerHTML = "";
-      resultBox.textContent = "Repository analysis started. Please wait.";
-      setProgress("Step 1/4: Validating input...");
-      setTimeout(() => setProgress("Step 2/4: Cloning repository..."), 500);
-      setTimeout(() => setProgress("Step 3/4: Reading Python files..."), 1500);
-      setTimeout(() => setProgress("Step 4/4: Sending code to AI and generating report..."), 3000);
+      resultBox.textContent = "Анализ репозитория запущен. Пожалуйста, подожди.";
+      setProgress("Шаг 1/4: Проверка ссылки...");
+      setTimeout(() => setProgress("Шаг 2/4: Получение репозитория..."), 500);
+      setTimeout(() => setProgress("Шаг 3/4: Чтение Python-файлов..."), 1500);
+      setTimeout(() => setProgress("Шаг 4/4: Отправка кода в ИИ и генерация отчёта..."), 3000);
 
       try {
         const response = await fetch("/scan", {
@@ -539,16 +738,16 @@
 
         if (!response.ok || data.status === "error") {
           statusBox.className = "error";
-          statusBox.textContent = "Error";
+          statusBox.textContent = "Ошибка";
           document.getElementById("summary").textContent = "";
           document.getElementById("summaryBadges").innerHTML = "";
-          resultBox.textContent = data.report || "Scan failed.";
-          setProgress("Scan failed.");
+          resultBox.textContent = data.report || "Сканирование не удалось.";
+          setProgress("Сканирование завершилось ошибкой.");
           return;
         }
 
         statusBox.className = "ok";
-        statusBox.textContent = "Completed";
+        statusBox.textContent = "Готово";
 
         try {
           currentReport = JSON.parse(data.report);
@@ -557,22 +756,22 @@
           renderSummary(data.summary || {});
           renderVulnerabilities(currentReport);
           loadHistory();
-          setProgress("Scan completed successfully.");
+          setProgress("Сканирование успешно завершено.");
 
         } catch (e) {
           document.getElementById("summary").textContent = "";
           document.getElementById("summaryBadges").innerHTML = "";
           resultBox.textContent = data.report;
-          setProgress("Scan completed, but report rendering fell back to plain text.");
+          setProgress("Отчёт получен, но отображение перешло в текстовый режим.");
         }
 
       } catch (error) {
         statusBox.className = "error";
-        statusBox.textContent = "Error";
+        statusBox.textContent = "Ошибка";
         document.getElementById("summary").textContent = "";
         document.getElementById("summaryBadges").innerHTML = "";
-        resultBox.textContent = "Request failed: " + error;
-        setProgress("Request failed.");
+        resultBox.textContent = "Ошибка запроса: " + error;
+        setProgress("Запрос завершился ошибкой.");
       }
     }
 
@@ -584,22 +783,22 @@
 
       if (!fileInput.files || fileInput.files.length === 0) {
         statusBox.className = "error";
-        statusBox.textContent = "Error";
-        resultBox.textContent = "Please select a ZIP file.";
+        statusBox.textContent = "Ошибка";
+        resultBox.textContent = "Пожалуйста, выбери ZIP-файл.";
         return;
       }
 
       const file = fileInput.files[0];
 
       statusBox.className = "loading";
-      statusBox.textContent = "Scanning ZIP...";
+      statusBox.textContent = "Сканирование ZIP...";
       document.getElementById("summary").textContent = "";
       document.getElementById("summaryBadges").innerHTML = "";
-      resultBox.textContent = "ZIP analysis started. Please wait.";
-      setProgress("Step 1/4: Uploading ZIP...");
-      setTimeout(() => setProgress("Step 2/4: Extracting project files..."), 500);
-      setTimeout(() => setProgress("Step 3/4: Reading Python files..."), 1500);
-      setTimeout(() => setProgress("Step 4/4: Sending code to AI and generating report..."), 3000);
+      resultBox.textContent = "Анализ ZIP запущен. Пожалуйста, подожди.";
+      setProgress("Шаг 1/4: Загрузка ZIP...");
+      setTimeout(() => setProgress("Шаг 2/4: Распаковка проекта..."), 500);
+      setTimeout(() => setProgress("Шаг 3/4: Чтение Python-файлов..."), 1500);
+      setTimeout(() => setProgress("Шаг 4/4: Отправка кода в ИИ и генерация отчёта..."), 3000);
 
       try {
         const formData = new FormData();
@@ -615,14 +814,14 @@
 
         if (!response.ok || data.status === "error") {
           statusBox.className = "error";
-          statusBox.textContent = "Error";
-          resultBox.textContent = data.report || "ZIP scan failed.";
-          setProgress("ZIP scan failed.");
+          statusBox.textContent = "Ошибка";
+          resultBox.textContent = data.report || "ZIP-сканирование не удалось.";
+          setProgress("ZIP-сканирование завершилось ошибкой.");
           return;
         }
 
         statusBox.className = "ok";
-        statusBox.textContent = "Completed";
+        statusBox.textContent = "Готово";
 
         try {
           currentReport = JSON.parse(data.report);
@@ -631,18 +830,18 @@
           renderSummary(data.summary || {});
           renderVulnerabilities(currentReport);
           loadHistory();
-          setProgress("ZIP scan completed successfully.");
+          setProgress("ZIP-сканирование успешно завершено.");
 
         } catch (e) {
           resultBox.textContent = data.report;
-          setProgress("ZIP scan completed, but report rendering fell back to plain text.");
+          setProgress("Отчёт получен, но отображение перешло в текстовый режим.");
         }
 
       } catch (error) {
         statusBox.className = "error";
-        statusBox.textContent = "Error";
-        resultBox.textContent = "Request failed: " + error;
-        setProgress("ZIP request failed.");
+        statusBox.textContent = "Ошибка";
+        resultBox.textContent = "Ошибка запроса: " + error;
+        setProgress("ZIP-запрос завершился ошибкой.");
       }
     }
 
