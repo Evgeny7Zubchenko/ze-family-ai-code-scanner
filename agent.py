@@ -12,6 +12,10 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 MAX_PY_FILES = 30
 MAX_TOTAL_CHARS = 160000
 
+REQUEST_HEADERS = {
+    "User-Agent": "ZE-Family-AI-Code-Scanner"
+}
+
 
 def validate_openai_key():
     if not OPENAI_API_KEY:
@@ -27,7 +31,7 @@ def validate_repo_url(repo_url):
         raise Exception("Invalid GitHub repository URL.")
 
 
-def clone_repo(repo_url):
+def parse_github_repo(repo_url):
     clean_url = repo_url.strip()
 
     if clean_url.endswith(".git"):
@@ -44,29 +48,76 @@ def clone_repo(repo_url):
     owner = parts[0]
     repo = parts[1]
 
+    return owner, repo
+
+
+def download_repo_zip(owner, repo, branch):
+    zip_url = f"https://codeload.github.com/{owner}/{repo}/zip/refs/heads/{branch}"
+
+    response = requests.get(
+        zip_url,
+        headers=REQUEST_HEADERS,
+        timeout=60,
+        allow_redirects=True
+    )
+
+    if response.status_code == 200:
+        return response.content
+
+    return None
+
+
+def clone_repo(repo_url):
+    owner, repo = parse_github_repo(repo_url)
+
     api_url = f"https://api.github.com/repos/{owner}/{repo}"
-    api_response = requests.get(api_url, timeout=30)
 
-    if api_response.status_code != 200:
-        raise Exception("Failed to fetch repository metadata. Make sure the repo is public and exists.")
+    api_response = requests.get(
+        api_url,
+        headers=REQUEST_HEADERS,
+        timeout=30
+    )
 
-    repo_data = api_response.json()
-    default_branch = repo_data.get("default_branch")
+    branches_to_try = []
 
-    if not default_branch:
-        raise Exception("Could not determine repository default branch.")
+    if api_response.status_code == 200:
+        repo_data = api_response.json()
+        default_branch = repo_data.get("default_branch")
 
-    zip_url = f"https://codeload.github.com/{owner}/{repo}/zip/refs/heads/{default_branch}"
-    zip_response = requests.get(zip_url, timeout=60)
+        if default_branch:
+            branches_to_try.append(default_branch)
+    else:
+        # если API не сработал, не падаем сразу — пробуем стандартные ветки
+        pass
 
-    if zip_response.status_code != 200:
-        raise Exception("Failed to download repository archive.")
+    # fallback ветки
+    for candidate in ["main", "master"]:
+        if candidate not in branches_to_try:
+            branches_to_try.append(candidate)
 
-    zip_bytes = io.BytesIO(zip_response.content)
+    zip_bytes = None
+
+    for branch in branches_to_try:
+        zip_bytes = download_repo_zip(owner, repo, branch)
+        if zip_bytes:
+            break
+
+    if not zip_bytes:
+        if api_response.status_code == 404:
+            raise Exception("Repository not found or is private.")
+        if api_response.status_code == 403:
+            raise Exception("GitHub API rate limit reached. Try again later.")
+        raise Exception(
+            f"Failed to download repository archive. Tried branches: {', '.join(branches_to_try)}"
+        )
+
     extract_folder = f"cloned_repo_{uuid.uuid4().hex[:8]}"
 
-    with zipfile.ZipFile(zip_bytes, "r") as zip_ref:
-        zip_ref.extractall(extract_folder)
+    try:
+        with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zip_ref:
+            zip_ref.extractall(extract_folder)
+    except Exception as e:
+        raise Exception(f"Failed to extract repository archive: {str(e)}")
 
     return extract_folder
 
