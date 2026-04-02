@@ -9,9 +9,17 @@ import requests
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-MAX_FILES = 40
-MAX_CHARS = 180000
+MAX_FILES = 50
+MAX_CHARS = 220000
 HEADERS = {"User-Agent": "ZE-Family-Scanner"}
+
+SUPPORTED_LANGUAGES = {
+    "auto": [".py", ".js", ".ts"],
+    "python": [".py"],
+    "javascript": [".js"],
+    "typescript": [".ts"],
+    "multi": [".py", ".js", ".ts"]
+}
 
 
 def validate_key():
@@ -26,6 +34,11 @@ def validate_repo_url(repo_url):
     parts = repo_url.replace("https://github.com/", "").strip("/").split("/")
     if len(parts) < 2:
         raise Exception("Invalid GitHub repository URL.")
+
+
+def validate_language(language):
+    if language not in SUPPORTED_LANGUAGES:
+        raise Exception("Unsupported language selection.")
 
 
 def parse_repo(url):
@@ -73,7 +86,9 @@ def clone_repo(url):
             raise Exception("Repository not found or is private.")
         if api_response.status_code == 403:
             raise Exception("GitHub API rate limit reached. Try again later.")
-        raise Exception(f"Failed to download repository archive. Tried branches: {', '.join(branches_to_try)}")
+        raise Exception(
+            f"Failed to download repository archive. Tried branches: {', '.join(branches_to_try)}"
+        )
 
     folder = f"repo_{uuid.uuid4().hex[:6]}"
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
@@ -97,13 +112,25 @@ def extract_zip_to_temp(uploaded_file):
     return folder
 
 
-def find_files(folder):
+def get_extensions_for_language(language):
+    validate_language(language)
+    return SUPPORTED_LANGUAGES[language]
+
+
+def find_files(folder, language="auto"):
+    extensions = get_extensions_for_language(language)
     files = []
+
     for root, dirs, fs in os.walk(folder):
-        dirs[:] = [d for d in dirs if d not in {".git", "node_modules", ".venv", "venv", "__pycache__"}]
+        dirs[:] = [
+            d for d in dirs
+            if d not in {".git", "node_modules", ".venv", "venv", "__pycache__", ".next", "dist", "build"}
+        ]
+
         for f in fs:
-            if f.endswith((".py", ".js", ".ts")):
+            if any(f.endswith(ext) for ext in extensions):
                 files.append(os.path.join(root, f))
+
     return files
 
 
@@ -132,8 +159,21 @@ def collect_code(files):
     return code, count
 
 
-def call_ai(code, source_name, file_count):
+def build_language_prompt(language):
+    mapping = {
+        "auto": "Auto-detect relevant issues across Python, JavaScript, and TypeScript.",
+        "python": "Focus only on Python security issues and Python-specific fixes.",
+        "javascript": "Focus only on JavaScript security issues and JavaScript-specific fixes.",
+        "typescript": "Focus only on TypeScript security issues and TypeScript-specific fixes.",
+        "multi": "Analyze across Python, JavaScript, and TypeScript with language-appropriate fixes."
+    }
+    return mapping.get(language, "Analyze the selected codebase safely.")
+
+
+def call_ai(code, source_name, file_count, language):
     validate_key()
+
+    language_prompt = build_language_prompt(language)
 
     prompt = f"""
 You are a senior security engineer.
@@ -152,7 +192,7 @@ Return this exact JSON shape:
       "confidence": "HIGH|MEDIUM|LOW",
       "source": "LLM",
       "explanation": "what is wrong",
-      "fix": "how to fix it"
+      "fix": "how to fix it with a small practical example"
     }}
   ]
 }}
@@ -168,6 +208,11 @@ Rules:
 - Focus on real security issues, not style issues
 - Avoid duplicates
 - Sort more severe issues first
+- Keep fixes practical and specific
+- Mention safe alternatives where useful
+
+Language mode:
+{language_prompt}
 
 Source:
 {source_name}
@@ -287,31 +332,33 @@ def normalize_response(raw_text):
     }
 
 
-def analyze_folder(folder_path, source_name):
-    files = find_files(folder_path)
+def analyze_folder(folder_path, source_name, language="auto"):
+    files = find_files(folder_path, language=language)
     code, count = collect_code(files)
 
     if count == 0 or not code.strip():
-        raise Exception("Could not read project code.")
+        raise Exception("Could not read project code for the selected language.")
 
-    raw = call_ai(code, source_name, count)
+    raw = call_ai(code, source_name, count, language)
     return normalize_response(raw)
 
 
-def run_agent(repo_url):
+def run_agent(repo_url, language="auto"):
     validate_repo_url(repo_url)
+    validate_language(language)
     folder = clone_repo(repo_url)
 
     try:
-        return analyze_folder(folder, repo_url)
+        return analyze_folder(folder, repo_url, language=language)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 
 
-def run_agent_from_zip(uploaded_file):
+def run_agent_from_zip(uploaded_file, language="auto"):
+    validate_language(language)
     folder = extract_zip_to_temp(uploaded_file)
 
     try:
-        return analyze_folder(folder, uploaded_file.filename)
+        return analyze_folder(folder, uploaded_file.filename, language=language)
     finally:
         shutil.rmtree(folder, ignore_errors=True)

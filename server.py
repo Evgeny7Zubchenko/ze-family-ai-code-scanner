@@ -11,12 +11,18 @@ from agent import run_agent, run_agent_from_zip
 
 app = Flask(__name__)
 
-# ---------- Config ----------
+# -----------------------------
+# Files
+# -----------------------------
 HISTORY_FILE = "scans_history.json"
 PRO_USERS_FILE = "pro_users.json"
 FREE_USAGE_FILE = "free_usage.json"
 
+# -----------------------------
+# Environment
+# -----------------------------
 APP_BASE_URL = os.getenv("APP_BASE_URL", "").rstrip("/")
+
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
@@ -26,24 +32,30 @@ STRIPE_PRICE_ID_6MONTHS = os.getenv("STRIPE_PRICE_ID_6MONTHS", "")
 
 FREE_SCANS_PER_DAY = 2
 
-stripe.api_key = STRIPE_SECRET_KEY
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
 
-# ---------- Helpers ----------
+# -----------------------------
+# Helpers
+# -----------------------------
 def utc_now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
-def load_json_file(path, default):
+def today_key():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def load_json_file(path, default_value):
     if not os.path.exists(path):
-        return default
+        return default_value
 
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data
+            return json.load(f)
     except Exception:
-        return default
+        return default_value
 
 
 def save_json_file(path, data):
@@ -114,8 +126,8 @@ def build_summary(vulnerabilities):
 def calculate_security_score(vulnerabilities):
     score = 100
 
-    for v in vulnerabilities:
-        sev = str(v.get("severity", "UNKNOWN")).upper()
+    for item in vulnerabilities:
+        sev = str(item.get("severity", "UNKNOWN")).upper()
         if sev == "HIGH":
             score -= 25
         elif sev == "MEDIUM":
@@ -126,44 +138,47 @@ def calculate_security_score(vulnerabilities):
     return max(score, 0)
 
 
-def store_scan(scan_name, source_label, repo_url, email, result_data):
-    vulnerabilities = result_data.get("vulnerabilities", [])
-    summary = build_summary(vulnerabilities)
+def normalize_email(email):
+    return str(email or "").strip().lower()
 
-    record = {
-        "id": str(uuid.uuid4()),
-        "created_at": utc_now_iso(),
-        "scan_name": scan_name if scan_name else "Untitled scan",
-        "source_label": source_label,
-        "repo_url": repo_url,
-        "email": email,
-        "summary": summary,
-        "score": result_data.get("score", calculate_security_score(vulnerabilities)),
-        "ai_summary": result_data.get("summary", ""),
-        "report": vulnerabilities
+
+def normalize_language(language):
+    return str(language or "auto").strip().lower()
+
+
+def get_price_id_for_plan(plan_key):
+    mapping = {
+        "week": STRIPE_PRICE_ID_WEEK,
+        "month": STRIPE_PRICE_ID_MONTH,
+        "6months": STRIPE_PRICE_ID_6MONTHS
     }
-
-    history = load_history()
-    history.insert(0, record)
-    history = history[:50]
-    save_history(history)
-
-    return record
+    return mapping.get(str(plan_key).strip().lower(), "")
 
 
-def get_today_key():
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+def require_stripe_config():
+    if not STRIPE_SECRET_KEY:
+        raise Exception("STRIPE_SECRET_KEY is not configured.")
+    if not APP_BASE_URL:
+        raise Exception("APP_BASE_URL is not configured.")
 
 
 def get_user_plan(email):
+    email = normalize_email(email)
+
     if not email:
-        return {"plan": "free", "active": False}
+        return {
+            "plan": "free",
+            "active": False
+        }
 
     pro_users = load_pro_users()
-    user = pro_users.get(email.lower())
+    user = pro_users.get(email)
 
     if not user:
-        return {"plan": "free", "active": False}
+        return {
+            "plan": "free",
+            "active": False
+        }
 
     status = str(user.get("status", "")).lower()
     active = status == "active"
@@ -177,14 +192,15 @@ def get_user_plan(email):
 
 
 def can_run_scan(email):
-    plan = get_user_plan(email)
+    email = normalize_email(email)
+    plan_info = get_user_plan(email)
 
-    if plan["active"]:
-        return True, None, plan
+    if plan_info["active"]:
+        return True, None, plan_info
 
     usage = load_free_usage()
-    today = get_today_key()
-    key = (email or "anonymous").lower()
+    key = email if email else "anonymous"
+    today = today_key()
 
     if key not in usage:
         usage[key] = {}
@@ -192,15 +208,16 @@ def can_run_scan(email):
     count_today = int(usage[key].get(today, 0))
 
     if count_today >= FREE_SCANS_PER_DAY:
-        return False, f"Free limit reached: {FREE_SCANS_PER_DAY} scans per day.", plan
+        return False, f"Free limit reached: {FREE_SCANS_PER_DAY} scans per day.", plan_info
 
-    return True, None, plan
+    return True, None, plan_info
 
 
 def increment_free_scan_usage(email):
+    email = normalize_email(email)
     usage = load_free_usage()
-    today = get_today_key()
-    key = (email or "anonymous").lower()
+    key = email if email else "anonymous"
+    today = today_key()
 
     if key not in usage:
         usage[key] = {}
@@ -209,23 +226,50 @@ def increment_free_scan_usage(email):
     save_free_usage(usage)
 
 
-def get_price_id_for_plan(plan_key):
-    mapping = {
-        "week": STRIPE_PRICE_ID_WEEK,
-        "month": STRIPE_PRICE_ID_MONTH,
-        "6months": STRIPE_PRICE_ID_6MONTHS
+def store_scan(scan_name, source_label, repo_url, email, language, result_data):
+    vulnerabilities = result_data.get("vulnerabilities", [])
+    ai_summary = result_data.get("summary", "")
+    score = result_data.get("score", calculate_security_score(vulnerabilities))
+    summary = build_summary(vulnerabilities)
+
+    record = {
+        "id": str(uuid.uuid4()),
+        "created_at": utc_now_iso(),
+        "scan_name": scan_name if scan_name else "Untitled scan",
+        "source_label": source_label,
+        "repo_url": repo_url,
+        "email": normalize_email(email),
+        "language": normalize_language(language),
+        "score": score,
+        "ai_summary": ai_summary,
+        "summary": summary,
+        "report": vulnerabilities
     }
-    return mapping.get(plan_key, "")
+
+    history = load_history()
+    history.insert(0, record)
+    history = history[:100]
+    save_history(history)
+
+    return record
 
 
-def require_stripe_config():
-    if not STRIPE_SECRET_KEY:
-        raise Exception("STRIPE_SECRET_KEY is not configured.")
-    if not APP_BASE_URL:
-        raise Exception("APP_BASE_URL is not configured.")
+def find_scan_by_id(scan_id):
+    history = load_history()
+    for item in history:
+        if item.get("id") == scan_id:
+            return item
+    return None
 
 
-# ---------- Routes ----------
+def user_can_export_current(email):
+    plan = get_user_plan(email)
+    return plan["active"]
+
+
+# -----------------------------
+# Routes
+# -----------------------------
 @app.route("/", methods=["GET"])
 def home():
     return send_file("index.html")
@@ -242,7 +286,7 @@ def health():
 @app.route("/plan-status", methods=["POST"])
 def plan_status():
     data = request.get_json() or {}
-    email = str(data.get("email", "")).strip().lower()
+    email = normalize_email(data.get("email", ""))
 
     plan = get_user_plan(email)
     can_scan, reason, _ = can_run_scan(email)
@@ -263,7 +307,8 @@ def scan_repo():
         data = request.get_json() or {}
         repo_url = str(data.get("repo_url", "")).strip()
         scan_name = str(data.get("scan_name", "")).strip()
-        email = str(data.get("email", "")).strip().lower()
+        email = normalize_email(data.get("email", ""))
+        language = normalize_language(data.get("language", "auto"))
 
         if not repo_url:
             return jsonify({
@@ -271,7 +316,7 @@ def scan_repo():
                 "report": "repo_url is required"
             }), 400
 
-        allowed, reason, plan = can_run_scan(email)
+        allowed, reason, plan_info = can_run_scan(email)
         if not allowed:
             return jsonify({
                 "status": "error",
@@ -279,9 +324,9 @@ def scan_repo():
                 "upgrade_required": True
             }), 403
 
-        result_data = run_agent(repo_url)
+        result_data = run_agent(repo_url, language=language)
 
-        if not plan["active"]:
+        if not plan_info["active"]:
             increment_free_scan_usage(email)
 
         record = store_scan(
@@ -289,6 +334,7 @@ def scan_repo():
             source_label="GitHub",
             repo_url=repo_url,
             email=email,
+            language=language,
             result_data=result_data
         )
 
@@ -299,7 +345,8 @@ def scan_repo():
             "score": record["score"],
             "ai_summary": record["ai_summary"],
             "scan_id": record["id"],
-            "plan": get_user_plan(email)["plan"]
+            "plan": get_user_plan(email)["plan"],
+            "language": record["language"]
         })
 
     except Exception as e:
@@ -314,7 +361,8 @@ def scan_zip():
     try:
         uploaded_file = request.files.get("file")
         scan_name = str(request.form.get("scan_name", "")).strip()
-        email = str(request.form.get("email", "")).strip().lower()
+        email = normalize_email(request.form.get("email", ""))
+        language = normalize_language(request.form.get("language", "auto"))
 
         if uploaded_file is None:
             return jsonify({
@@ -328,7 +376,7 @@ def scan_zip():
                 "report": "Only .zip files are supported"
             }), 400
 
-        allowed, reason, plan = can_run_scan(email)
+        allowed, reason, plan_info = can_run_scan(email)
         if not allowed:
             return jsonify({
                 "status": "error",
@@ -336,9 +384,9 @@ def scan_zip():
                 "upgrade_required": True
             }), 403
 
-        result_data = run_agent_from_zip(uploaded_file)
+        result_data = run_agent_from_zip(uploaded_file, language=language)
 
-        if not plan["active"]:
+        if not plan_info["active"]:
             increment_free_scan_usage(email)
 
         record = store_scan(
@@ -346,6 +394,7 @@ def scan_zip():
             source_label="ZIP Upload",
             repo_url=uploaded_file.filename,
             email=email,
+            language=language,
             result_data=result_data
         )
 
@@ -356,7 +405,8 @@ def scan_zip():
             "score": record["score"],
             "ai_summary": record["ai_summary"],
             "scan_id": record["id"],
-            "plan": get_user_plan(email)["plan"]
+            "plan": get_user_plan(email)["plan"],
+            "language": record["language"]
         })
 
     except Exception as e:
@@ -372,15 +422,21 @@ def create_checkout_session():
         require_stripe_config()
 
         data = request.get_json() or {}
-        email = str(data.get("email", "")).strip().lower()
+        email = normalize_email(data.get("email", ""))
         plan_key = str(data.get("plan", "")).strip().lower()
 
         if not email:
-            return jsonify({"status": "error", "message": "Email is required."}), 400
+            return jsonify({
+                "status": "error",
+                "message": "Email is required."
+            }), 400
 
         price_id = get_price_id_for_plan(plan_key)
         if not price_id:
-            return jsonify({"status": "error", "message": "Invalid plan selected."}), 400
+            return jsonify({
+                "status": "error",
+                "message": "Invalid plan selected."
+            }), 400
 
         session = stripe.checkout.Session.create(
             mode="subscription",
@@ -417,7 +473,10 @@ def stripe_webhook():
     sig_header = request.headers.get("Stripe-Signature", "")
 
     if not STRIPE_WEBHOOK_SECRET:
-        return jsonify({"status": "error", "message": "Missing webhook secret."}), 500
+        return jsonify({
+            "status": "error",
+            "message": "Missing webhook secret."
+        }), 500
 
     try:
         event = stripe.Webhook.construct_event(
@@ -426,14 +485,16 @@ def stripe_webhook():
             secret=STRIPE_WEBHOOK_SECRET
         )
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Webhook error: {str(e)}"}), 400
+        return jsonify({
+            "status": "error",
+            "message": f"Webhook error: {str(e)}"
+        }), 400
 
     pro_users = load_pro_users()
 
     event_type = event["type"]
     obj = event["data"]["object"]
 
-    # Successful Checkout Session
     if event_type == "checkout.session.completed":
         customer_email = (obj.get("customer_details", {}) or {}).get("email") or obj.get("customer_email")
         customer_id = obj.get("customer")
@@ -441,8 +502,9 @@ def stripe_webhook():
         metadata = obj.get("metadata", {}) or {}
         plan_key = metadata.get("plan", "month")
 
-        if customer_email:
-            pro_users[customer_email.lower()] = {
+        email = normalize_email(customer_email)
+        if email:
+            pro_users[email] = {
                 "status": "active",
                 "plan": plan_key,
                 "stripe_customer_id": customer_id,
@@ -451,11 +513,10 @@ def stripe_webhook():
             }
             save_pro_users(pro_users)
 
-    # Subscription updated
     elif event_type == "customer.subscription.updated":
         customer_id = obj.get("customer")
         subscription_id = obj.get("id")
-        status = obj.get("status", "")
+        status = str(obj.get("status", "")).lower()
 
         for email, user in pro_users.items():
             if user.get("stripe_customer_id") == customer_id or user.get("stripe_subscription_id") == subscription_id:
@@ -464,7 +525,6 @@ def stripe_webhook():
                 save_pro_users(pro_users)
                 break
 
-    # Subscription deleted/cancelled
     elif event_type == "customer.subscription.deleted":
         customer_id = obj.get("customer")
         subscription_id = obj.get("id")
@@ -489,19 +549,18 @@ def history_list():
 
 @app.route("/history/<scan_id>", methods=["GET"])
 def history_item(scan_id):
-    history = load_history()
+    item = find_scan_by_id(scan_id)
 
-    for item in history:
-        if item.get("id") == scan_id:
-            return jsonify({
-                "status": "ok",
-                "item": item
-            })
+    if not item:
+        return jsonify({
+            "status": "error",
+            "message": "Scan not found"
+        }), 404
 
     return jsonify({
-        "status": "error",
-        "message": "Scan not found"
-    }), 404
+        "status": "ok",
+        "item": item
+    })
 
 
 @app.route("/history/clear", methods=["POST"])
@@ -515,24 +574,59 @@ def clear_history():
 
 @app.route("/export/<scan_id>", methods=["GET"])
 def export_scan(scan_id):
-    history = load_history()
+    item = find_scan_by_id(scan_id)
 
-    for item in history:
-        if item.get("id") == scan_id:
-            content = json.dumps(item, ensure_ascii=False, indent=2)
-            buffer = io.BytesIO(content.encode("utf-8"))
+    if not item:
+        return jsonify({
+            "status": "error",
+            "message": "Scan not found"
+        }), 404
 
-            return send_file(
-                buffer,
-                as_attachment=True,
-                download_name=f"scan_{scan_id}.json",
-                mimetype="application/json"
-            )
+    content = json.dumps(item, ensure_ascii=False, indent=2)
+    buffer = io.BytesIO(content.encode("utf-8"))
 
-    return jsonify({
-        "status": "error",
-        "message": "Scan not found"
-    }), 404
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"scan_{scan_id}.json",
+        mimetype="application/json"
+    )
+
+
+@app.route("/export-current", methods=["POST"])
+def export_current():
+    data = request.get_json() or {}
+    email = normalize_email(data.get("email", ""))
+    report = data.get("report", [])
+    ai_summary = str(data.get("ai_summary", ""))
+    score = data.get("score", 0)
+    language = normalize_language(data.get("language", "auto"))
+
+    if not user_can_export_current(email):
+        return jsonify({
+            "status": "error",
+            "message": "Current export is available only for Pro users."
+        }), 403
+
+    payload = {
+        "exported_at": utc_now_iso(),
+        "email": email,
+        "language": language,
+        "score": score,
+        "ai_summary": ai_summary,
+        "summary": build_summary(report if isinstance(report, list) else []),
+        "report": report if isinstance(report, list) else []
+    }
+
+    content = json.dumps(payload, ensure_ascii=False, indent=2)
+    buffer = io.BytesIO(content.encode("utf-8"))
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="current_scan_report.json",
+        mimetype="application/json"
+    )
 
 
 if __name__ == "__main__":
